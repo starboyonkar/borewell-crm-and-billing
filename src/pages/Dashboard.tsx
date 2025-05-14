@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useCustomers } from '../context/CustomerContext';
 import { useAuth } from '../context/AuthContext';
+import StatisticsPanel from '../components/StatisticsPanel';
 
 const Dashboard: React.FC = () => {
   const { customers } = useCustomers();
@@ -65,6 +66,8 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <StatisticsPanel />
 
       <Card>
         <CardHeader>
