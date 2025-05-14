@@ -1,7 +1,15 @@
 
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 import type { CustomerData } from '../context/CustomerContext';
+
+// Use proper typing for jsPDF with autoTable plugin
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDFWithAutoTable;
+  lastAutoTable: {
+    finalY: number;
+  };
+}
 
 // Default bill template configuration
 let billTemplate = {
@@ -28,7 +36,7 @@ export const getBillTemplate = () => {
 };
 
 export const generatePDF = (customer: CustomerData): jsPDF => {
-  const doc = new jsPDF();
+  const doc = new jsPDF() as jsPDFWithAutoTable;
   const pageWidth = doc.internal.pageSize.width;
 
   // Add company header
@@ -68,7 +76,7 @@ export const generatePDF = (customer: CustomerData): jsPDF => {
   doc.text(`Payment Status: ${customer.paymentStatus}`, pageWidth - 75, 76);
   
   // Service details table
-  autoTable(doc, {
+  doc.autoTable({
     startY: 95,
     head: [['Service/Product', 'Description', 'Amount']],
     body: [
@@ -94,7 +102,7 @@ export const generatePDF = (customer: CustomerData): jsPDF => {
   });
 
   // Notes
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  const finalY = doc.lastAutoTable.finalY + 10;
   if (customer.notes) {
     doc.text('Notes:', 20, finalY);
     doc.setFontSize(10);
