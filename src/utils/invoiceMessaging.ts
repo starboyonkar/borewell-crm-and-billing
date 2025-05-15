@@ -1,5 +1,5 @@
 
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { generatePDF } from './pdfGenerator';
 import type { CustomerData } from '../context/CustomerContext';
 
@@ -10,7 +10,11 @@ export const sendDigitalInvoice = async (
   channel: MessageChannel
 ): Promise<boolean> => {
   if (!customer) {
-    toast.error('Customer information not found');
+    toast({
+      title: "Error",
+      description: "Customer information not found",
+      variant: "destructive"
+    });
     return false;
   }
 
@@ -19,87 +23,127 @@ export const sendDigitalInvoice = async (
   const pdfBlob = pdfDoc.output('blob');
   
   try {
+    let success = false;
+    
     switch (channel) {
       case 'email':
         if (!customer.email) {
-          toast.error('Customer email not provided');
+          toast({
+            title: "Error",
+            description: "Customer email not provided",
+            variant: "destructive"
+          });
           return false;
         }
-        await sendViaEmail(customer, pdfBlob);
+        success = await sendViaEmail(customer, pdfBlob);
         break;
       case 'whatsapp':
         if (!customer.phone) {
-          toast.error('Customer phone number not provided');
+          toast({
+            title: "Error",
+            description: "Customer phone number not provided",
+            variant: "destructive"
+          });
           return false;
         }
-        await sendViaWhatsApp(customer, pdfBlob);
+        success = await sendViaWhatsApp(customer, pdfBlob);
         break;
       case 'sms':
         if (!customer.phone) {
-          toast.error('Customer phone number not provided');
+          toast({
+            title: "Error",
+            description: "Customer phone number not provided",
+            variant: "destructive"
+          });
           return false;
         }
-        await sendViaSMS(customer);
+        success = await sendViaSMS(customer);
         break;
       default:
-        toast.error('Invalid messaging channel selected');
+        toast({
+          title: "Error",
+          description: "Invalid messaging channel selected",
+          variant: "destructive"
+        });
         return false;
     }
     
-    toast.success(`Invoice sent successfully via ${channel}`);
-    return true;
+    if (success) {
+      toast({
+        title: "Success",
+        description: `Invoice sent successfully via ${channel}`,
+      });
+      return true;
+    } else {
+      throw new Error(`Failed to send invoice via ${channel}`);
+    }
   } catch (error) {
     console.error(`Error sending invoice via ${channel}:`, error);
-    toast.error(`Failed to send invoice via ${channel}. Please try again.`);
+    toast({
+      title: "Error",
+      description: `Failed to send invoice via ${channel}. Please try again.`,
+      variant: "destructive"
+    });
     return false;
   }
 };
 
 // In a real application, these would connect to actual services
-// For this demo, we'll simulate the process
+// We'll improve them to simulate successful deliveries and better error handling
 
-const sendViaEmail = async (customer: CustomerData, pdfBlob: Blob): Promise<void> => {
+const sendViaEmail = async (customer: CustomerData, pdfBlob: Blob): Promise<boolean> => {
   console.log(`Sending invoice to ${customer.name} via email: ${customer.email}`);
   
   // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 1500));
   
-  // In a real application, you would use a service like SendGrid, Amazon SES, etc.
-  // Example:
-  // const formData = new FormData();
-  // formData.append('to', customer.email);
-  // formData.append('subject', `Invoice for ${customer.serviceType}`);
-  // formData.append('attachment', pdfBlob, `invoice-${customer.id}.pdf`);
-  // await fetch('https://your-email-service.com/send', { method: 'POST', body: formData });
+  // In a real application, you would use an email service API
+  // For demo purposes, we'll simulate a successful email send
+  const sendSuccess = Math.random() > 0.1; // 90% success rate
+  
+  if (sendSuccess) {
+    console.log(`Email sent successfully to ${customer.email}`);
+    return true;
+  } else {
+    console.error(`Failed to send email to ${customer.email}`);
+    throw new Error("Email service temporarily unavailable");
+  }
 };
 
-const sendViaWhatsApp = async (customer: CustomerData, pdfBlob: Blob): Promise<void> => {
+const sendViaWhatsApp = async (customer: CustomerData, pdfBlob: Blob): Promise<boolean> => {
   console.log(`Sending invoice to ${customer.name} via WhatsApp: ${customer.phone}`);
   
   // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 2000));
   
   // In a real application, you would use WhatsApp Business API
-  // Example:
-  // const formData = new FormData();
-  // formData.append('phone', customer.phone);
-  // formData.append('message', `Invoice for your recent service: ${customer.serviceType}`);
-  // formData.append('document', pdfBlob, `invoice-${customer.id}.pdf`);
-  // await fetch('https://your-whatsapp-service.com/send', { method: 'POST', body: formData });
+  // For demo purposes, we'll simulate a successful WhatsApp message
+  const sendSuccess = Math.random() > 0.2; // 80% success rate
+  
+  if (sendSuccess) {
+    console.log(`WhatsApp message sent successfully to ${customer.phone}`);
+    return true;
+  } else {
+    console.error(`Failed to send WhatsApp message to ${customer.phone}`);
+    throw new Error("WhatsApp service temporarily unavailable");
+  }
 };
 
-const sendViaSMS = async (customer: CustomerData): Promise<void> => {
+const sendViaSMS = async (customer: CustomerData): Promise<boolean> => {
   console.log(`Sending invoice link to ${customer.name} via SMS: ${customer.phone}`);
   
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // In a real application, you would use an SMS service like Twilio, MessageBird, etc.
-  // Example:
-  // const message = `Your invoice for ${customer.serviceType} is ready. View it here: https://your-domain.com/invoices/${customer.id}`;
-  // await fetch('https://your-sms-service.com/send', {
-  //   method: 'POST',
-  //   body: JSON.stringify({ to: customer.phone, message }),
-  //   headers: { 'Content-Type': 'application/json' }
-  // });
+  // In a real application, you would use an SMS service API
+  // For demo purposes, we'll simulate a successful SMS
+  const sendSuccess = Math.random() > 0.1; // 90% success rate
+  
+  if (sendSuccess) {
+    console.log(`SMS sent successfully to ${customer.phone}`);
+    return true;
+  } else {
+    console.error(`Failed to send SMS to ${customer.phone}`);
+    throw new Error("SMS service temporarily unavailable");
+  }
 };

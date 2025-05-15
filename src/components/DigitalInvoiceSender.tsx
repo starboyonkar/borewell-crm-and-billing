@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Mail, Smartphone, Send } from 'lucide-react';
 import { sendDigitalInvoice } from '@/utils/invoiceMessaging';
 import type { CustomerData } from '@/context/CustomerContext';
@@ -19,20 +19,42 @@ const DigitalInvoiceSender: React.FC<DigitalInvoiceSenderProps> = ({ customer })
 
   const handleSend = async () => {
     if (!customer) {
-      toast.error("Customer information not available");
+      toast({
+        title: "Error",
+        description: "Customer information not available",
+        variant: "destructive"
+      });
       return;
     }
 
     // Validate that we have the required contact info for the selected channel
     if ((channel === 'email' && !customer.email) || 
         ((channel === 'whatsapp' || channel === 'sms') && !customer.phone)) {
-      toast.error(`Customer ${channel === 'email' ? 'email' : 'phone number'} is required`);
+      toast({
+        title: "Missing Information",
+        description: `Customer ${channel === 'email' ? 'email' : 'phone number'} is required`,
+        variant: "destructive"
+      });
       return;
     }
     
     setSending(true);
     try {
-      await sendDigitalInvoice(customer, channel);
+      const success = await sendDigitalInvoice(customer, channel);
+      if (!success) {
+        toast({
+          title: "Delivery Issue",
+          description: `There was a problem sending the invoice via ${channel}. Please try again.`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error in invoice sending:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again later.",
+        variant: "destructive"
+      });
     } finally {
       setSending(false);
     }

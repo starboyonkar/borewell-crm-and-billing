@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '../context/CustomerContext';
 import { generatePDF } from '../utils/pdfGenerator';
 import DigitalInvoiceSender from "@/components/DigitalInvoiceSender";
+import BillEditor from "@/components/BillEditor";
 
 const CustomerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +89,8 @@ const CustomerDetail: React.FC = () => {
           >
             Print Bill
           </Button>
+          {/* Add the Edit Bill Details Button */}
+          <BillEditor customer={customer} />
           <Button 
             variant="destructive" 
             onClick={handleDelete}
