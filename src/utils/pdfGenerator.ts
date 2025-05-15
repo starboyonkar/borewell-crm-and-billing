@@ -18,7 +18,7 @@ let billTemplate = {
   companyPhone: '+91 98765 43210',
   companyEmail: 'info@borewellservices.com',
   companyWebsite: 'www.borewellservices.com',
-  companyLogo: '',
+  companyLogo: '/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png',
   footer: 'Thank you for your business!',
   termsAndConditions: [
     'Payment is due within 15 days of invoice date.',
@@ -39,45 +39,56 @@ export const generatePDF = (customer: CustomerData): jsPDF => {
   const doc = new jsPDF() as jsPDFWithAutoTable;
   const pageWidth = doc.internal.pageSize.width;
 
-  // Add company header
+  // Add logo if available
+  if (billTemplate.companyLogo) {
+    try {
+      // In a browser environment, we would use this
+      // but we'll use a placeholder for the API simulation
+      doc.addImage(billTemplate.companyLogo, 'PNG', pageWidth / 2 - 20, 10, 40, 40, undefined, 'FAST');
+    } catch (error) {
+      console.error('Failed to add logo to PDF:', error);
+    }
+  }
+
+  // Add company header - adjusted position to account for logo
   doc.setFontSize(20);
   doc.setTextColor(0, 84, 147); // Blue color for header
-  doc.text(billTemplate.companyName, pageWidth / 2, 20, { align: 'center' });
+  doc.text(billTemplate.companyName, pageWidth / 2, 60, { align: 'center' });
 
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text(billTemplate.companyAddress, pageWidth / 2, 27, { align: 'center' });
-  doc.text(`Phone: ${billTemplate.companyPhone} | Email: ${billTemplate.companyEmail}`, pageWidth / 2, 32, { align: 'center' });
-  doc.text(`Website: ${billTemplate.companyWebsite}`, pageWidth / 2, 37, { align: 'center' });
+  doc.text(billTemplate.companyAddress, pageWidth / 2, 67, { align: 'center' });
+  doc.text(`Phone: ${billTemplate.companyPhone} | Email: ${billTemplate.companyEmail}`, pageWidth / 2, 72, { align: 'center' });
+  doc.text(`Website: ${billTemplate.companyWebsite}`, pageWidth / 2, 77, { align: 'center' });
 
   // Add invoice title
   doc.setFontSize(16);
   doc.setTextColor(0, 84, 147); // Blue color for header
-  doc.text('INVOICE', pageWidth / 2, 45, { align: 'center' });
+  doc.text('INVOICE', pageWidth / 2, 85, { align: 'center' });
   
   // Add separator line
   doc.setDrawColor(0, 84, 147);
-  doc.line(20, 48, pageWidth - 20, 48);
+  doc.line(20, 88, pageWidth - 20, 88);
 
   // Customer information
   doc.setFontSize(11);
   doc.setTextColor(0);
   
-  doc.text('Bill To:', 20, 55);
-  doc.text(`Name: ${customer.name}`, 20, 62);
-  doc.text(`Address: ${customer.address}`, 20, 69);
-  doc.text(`Phone: ${customer.phone}`, 20, 76);
-  doc.text(`Email: ${customer.email}`, 20, 83);
+  doc.text('Bill To:', 20, 95);
+  doc.text(`Name: ${customer.name}`, 20, 102);
+  doc.text(`Address: ${customer.address}`, 20, 109);
+  doc.text(`Phone: ${customer.phone}`, 20, 116);
+  doc.text(`Email: ${customer.email}`, 20, 123);
 
   // Invoice details
-  doc.text('Invoice Details:', pageWidth - 75, 55);
-  doc.text(`Invoice #: INV-${customer.id}`, pageWidth - 75, 62);
-  doc.text(`Date: ${new Date(customer.serviceDate).toLocaleDateString()}`, pageWidth - 75, 69);
-  doc.text(`Payment Status: ${customer.paymentStatus}`, pageWidth - 75, 76);
+  doc.text('Invoice Details:', pageWidth - 75, 95);
+  doc.text(`Invoice #: INV-${customer.id}`, pageWidth - 75, 102);
+  doc.text(`Date: ${new Date(customer.serviceDate).toLocaleDateString()}`, pageWidth - 75, 109);
+  doc.text(`Payment Status: ${customer.paymentStatus}`, pageWidth - 75, 116);
   
   // Service details table
   doc.autoTable({
-    startY: 95,
+    startY: 135,
     head: [['Service/Product', 'Description', 'Amount']],
     body: [
       [

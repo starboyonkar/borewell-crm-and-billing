@@ -32,6 +32,13 @@ const Login: React.FC = () => {
       <div className="w-full max-w-md">
         <Card className="shadow-xl">
           <CardHeader className="space-y-1 text-center">
+            <div className="flex justify-center mb-4">
+              <img 
+                src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" 
+                alt="Borewell Services Logo" 
+                className="h-24 w-auto"
+              />
+            </div>
             <CardTitle className="text-2xl font-bold text-borewell-700">Borewell Services</CardTitle>
             <CardDescription>
               Enter your username and password to access the system

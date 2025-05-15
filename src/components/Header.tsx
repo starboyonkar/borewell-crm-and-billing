@@ -32,9 +32,16 @@ const Header: React.FC = () => {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 sm:w-80">
               <div className="flex flex-col h-full py-6 space-y-6">
-                <Link to="/dashboard" className="text-xl font-bold px-4">
-                  Borewell Services
-                </Link>
+                <div className="flex items-center px-4">
+                  <img 
+                    src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" 
+                    alt="Borewell Services Logo" 
+                    className="h-10 w-auto mr-2"
+                  />
+                  <Link to="/dashboard" className="text-xl font-bold">
+                    Borewell Services
+                  </Link>
+                </div>
                 <nav className="flex flex-col space-y-4 px-4">
                   <Link to="/dashboard" className="hover:text-blue-200 transition py-2">
                     Dashboard
@@ -44,6 +51,9 @@ const Header: React.FC = () => {
                   </Link>
                   <Link to="/add-customer" className="hover:text-blue-200 transition py-2">
                     New Customer
+                  </Link>
+                  <Link to="/inventory" className="hover:text-blue-200 transition py-2">
+                    Inventory
                   </Link>
                   {user?.role === 'admin' && (
                     <Link to="/settings" className="hover:text-blue-200 transition py-2">
@@ -55,8 +65,13 @@ const Header: React.FC = () => {
             </SheetContent>
           </Sheet>
           
-          <Link to="/dashboard" className="text-xl font-bold">
-            Borewell Services
+          <Link to="/dashboard" className="flex items-center">
+            <img 
+              src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" 
+              alt="Borewell Services Logo" 
+              className="h-10 w-auto mr-2"
+            />
+            <span className="text-xl font-bold">Borewell Services</span>
           </Link>
         </div>
 
@@ -69,6 +84,9 @@ const Header: React.FC = () => {
           </Link>
           <Link to="/add-customer" className="hover:text-blue-200 transition">
             New Customer
+          </Link>
+          <Link to="/inventory" className="hover:text-blue-200 transition">
+            Inventory
           </Link>
           {user?.role === 'admin' && (
             <Link to="/settings" className="hover:text-blue-200 transition">
