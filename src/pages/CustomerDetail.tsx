@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '../context/CustomerContext';
 import { generatePDF } from '../utils/pdfGenerator';
+import DigitalInvoiceSender from "@/components/DigitalInvoiceSender";
 
 const CustomerDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -219,6 +219,11 @@ const CustomerDetail: React.FC = () => {
             </CardContent>
           </Card>
         )}
+      </div>
+
+      {/* Add Digital Invoice Sender component */}
+      <div className="mt-6">
+        <DigitalInvoiceSender customer={customer} />
       </div>
     </div>
   );

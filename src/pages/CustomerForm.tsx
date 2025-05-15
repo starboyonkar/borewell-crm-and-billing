@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -14,7 +15,9 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '../context/CustomerContext';
+import { useInventory } from '../context/InventoryContext';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 
 type FormData = {
   name: string;
@@ -40,6 +43,7 @@ const ACCESSORIES = ['Pipe', 'Cable', 'Control Panel', 'Starter', 'Filter', 'Mot
 const CustomerForm: React.FC = () => {
   const navigate = useNavigate();
   const { addCustomer } = useCustomers();
+  const { inventory, getItemsByCategory } = useInventory();
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -57,6 +61,29 @@ const CustomerForm: React.FC = () => {
     grandTotal: 0,
     paymentStatus: 'Pending',
   });
+
+  // Stock information state
+  const [availablePumps, setAvailablePumps] = useState<Array<{id: string, name: string, quantity: number}>>([]);
+  const [availablePumpModels, setAvailablePumpModels] = useState<string[]>([]);
+  const [accessoriesStock, setAccessoriesStock] = useState<Record<string, number>>({});
+
+  // Load inventory data when form loads or serviceType/pumpType changes
+  useEffect(() => {
+    // Get pumps from inventory
+    const pumps = getItemsByCategory('Pump');
+    setAvailablePumps(pumps.map(p => ({id: p.id, name: p.name, quantity: p.quantity})));
+    
+    // Get available accessories
+    const accessories = getItemsByCategory('Accessory');
+    const accessoryStock: Record<string, number> = {};
+    
+    ACCESSORIES.forEach(acc => {
+      const item = accessories.find(a => a.name.includes(acc));
+      accessoryStock[acc] = item?.quantity || 0;
+    });
+    
+    setAccessoriesStock(accessoryStock);
+  }, [getItemsByCategory, formData.serviceType]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -79,6 +106,15 @@ const CustomerForm: React.FC = () => {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // If pump type changes, update available models
+    if (name === 'pumpType') {
+      const pumps = getItemsByCategory('Pump')
+        .filter(p => p.name.includes(value))
+        .map(p => p.name.replace(value, '').trim());
+      
+      setAvailablePumpModels(pumps);
+    }
   };
 
   const handleAccessoryToggle = (value: string, checked: boolean) => {
@@ -92,6 +128,28 @@ const CustomerForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if required pump is in stock
+    if (formData.pumpType && formData.pumpModel) {
+      const pumpName = `${formData.pumpType} ${formData.pumpModel}`.trim();
+      const pump = availablePumps.find(p => p.name === pumpName);
+      
+      if (!pump || pump.quantity === 0) {
+        toast.error(`${pumpName} is out of stock!`);
+        return;
+      }
+    }
+    
+    // Check if selected accessories are in stock
+    if (formData.accessories && formData.accessories.length > 0) {
+      for (const accessory of formData.accessories) {
+        if (accessoriesStock[accessory] === 0) {
+          toast.error(`${accessory} is out of stock!`);
+          return;
+        }
+      }
+    }
+    
     addCustomer(formData);
     navigate(`/customers`);
   };
@@ -217,10 +275,30 @@ const CustomerForm: React.FC = () => {
                       <SelectValue placeholder="Select pump type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Submersible">Submersible</SelectItem>
-                      <SelectItem value="Jet">Jet</SelectItem>
-                      <SelectItem value="Centrifugal">Centrifugal</SelectItem>
-                      <SelectItem value="Solar">Solar</SelectItem>
+                      <SelectItem value="Submersible">
+                        Submersible
+                        <Badge className="ml-2" variant="outline">
+                          {getItemsByCategory('Pump').filter(p => p.name.includes('Submersible')).length} models
+                        </Badge>
+                      </SelectItem>
+                      <SelectItem value="Jet">
+                        Jet
+                        <Badge className="ml-2" variant="outline">
+                          {getItemsByCategory('Pump').filter(p => p.name.includes('Jet')).length} models
+                        </Badge>
+                      </SelectItem>
+                      <SelectItem value="Centrifugal">
+                        Centrifugal
+                        <Badge className="ml-2" variant="outline">
+                          {getItemsByCategory('Pump').filter(p => p.name.includes('Centrifugal')).length} models
+                        </Badge>
+                      </SelectItem>
+                      <SelectItem value="Solar">
+                        Solar
+                        <Badge className="ml-2" variant="outline">
+                          {getItemsByCategory('Pump').filter(p => p.name.includes('Solar')).length} models
+                        </Badge>
+                      </SelectItem>
                       <SelectItem value="None">None</SelectItem>
                     </SelectContent>
                   </Select>
@@ -229,13 +307,29 @@ const CustomerForm: React.FC = () => {
                 {formData.pumpType && formData.pumpType !== 'None' && (
                   <div className="space-y-2">
                     <Label htmlFor="pumpModel">Pump Model</Label>
-                    <Input 
-                      id="pumpModel" 
-                      name="pumpModel"
+                    <Select
                       value={formData.pumpModel || ''}
-                      onChange={handleInputChange}
-                      placeholder="Enter pump model" 
-                    />
+                      onValueChange={(value) => handleSelectChange('pumpModel', value)}
+                    >
+                      <SelectTrigger id="pumpModel">
+                        <SelectValue placeholder="Select pump model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availablePumps
+                          .filter(pump => pump.name.includes(formData.pumpType || ''))
+                          .map(pump => (
+                            <SelectItem key={pump.id} value={pump.name.replace(formData.pumpType || '', '').trim()}>
+                              {pump.name.replace(formData.pumpType || '', '').trim()}
+                              <Badge 
+                                className="ml-2" 
+                                variant={pump.quantity > 0 ? "outline" : "destructive"}
+                              >
+                                {pump.quantity > 0 ? `${pump.quantity} in stock` : 'Out of stock'}
+                              </Badge>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 
@@ -250,12 +344,23 @@ const CustomerForm: React.FC = () => {
                           onCheckedChange={(checked) => 
                             handleAccessoryToggle(accessory, checked as boolean)
                           }
+                          disabled={accessoriesStock[accessory] === 0}
                         />
                         <label
                           htmlFor={`accessory-${accessory}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 ${
+                            accessoriesStock[accessory] === 0 ? 'text-gray-400' : ''
+                          }`}
                         >
                           {accessory}
+                          <Badge 
+                            variant={accessoriesStock[accessory] > 0 ? "outline" : "destructive"} 
+                            className="text-xs"
+                          >
+                            {accessoriesStock[accessory] > 0 
+                              ? `${accessoriesStock[accessory]} in stock` 
+                              : 'Out of stock'}
+                          </Badge>
                         </label>
                       </div>
                     ))}

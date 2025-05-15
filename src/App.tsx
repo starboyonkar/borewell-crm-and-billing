@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CustomerProvider } from "./context/CustomerContext";
+import { InventoryProvider } from "./context/InventoryContext";
 import { ThemeProvider } from "./components/ThemeProvider";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -13,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import CustomerForm from "./pages/CustomerForm";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
+import Inventory from "./pages/Inventory";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -26,20 +28,23 @@ const App = () => (
       <ThemeProvider defaultTheme="light" storageKey="borewell-theme">
         <AuthProvider>
           <CustomerProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/customers" element={<Customers />} />
-                  <Route path="/customers/:id" element={<CustomerDetail />} />
-                  <Route path="/add-customer" element={<CustomerForm />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
+            <InventoryProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<Layout />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/customers" element={<Customers />} />
+                    <Route path="/customers/:id" element={<CustomerDetail />} />
+                    <Route path="/add-customer" element={<CustomerForm />} />
+                    <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </InventoryProvider>
           </CustomerProvider>
         </AuthProvider>
       </ThemeProvider>
