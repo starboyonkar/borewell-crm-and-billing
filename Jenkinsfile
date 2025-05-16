@@ -3,19 +3,17 @@ pipeline {
     agent any
     
     environment {
-        // Define environment variables
         DOCKER_IMAGE = 'borewell-crm-and-billing'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         CONTAINER_NAME = 'borewell-crm-container'
-        APP_PORT = '3000'
+        APP_PORT = '8080'
         HOST_PORT = '3000'
-        REPOSITORY_NAME = 'borewell-crm-and-billing'
+        EC2_PUBLIC_IP = '43.204.32.19'
     }
     
     stages {
         stage('Checkout') {
             steps {
-                // Check out code from the GitHub repository
                 checkout scm
                 echo 'Code checkout complete'
             }
@@ -53,10 +51,10 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Clean any previous Docker build artifacts
+                        // Clean any previous Docker artifacts
                         sh "docker system prune -f || true"
                         
-                        // Build Docker image with detailed output
+                        // Build Docker image
                         sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                         echo 'Docker image built successfully'
                     } catch (Exception e) {
@@ -76,14 +74,8 @@ pipeline {
                         sh "docker stop ${CONTAINER_NAME} || true"
                         sh "docker rm ${CONTAINER_NAME} || true"
                         
-                        // Run the new container
+                        // Run the new container with port mapping from 8080 (container) to 3000 (host)
                         sh "docker run -d -p ${HOST_PORT}:${APP_PORT} --name ${CONTAINER_NAME} ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                        
-                        // Get the EC2 instance's public IP
-                        def EC2_PUBLIC_IP = sh(
-                            script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4",
-                            returnStdout: true
-                        ).trim()
                         
                         echo "Application deployed successfully and accessible at: http://${EC2_PUBLIC_IP}:${HOST_PORT}"
                     } catch (Exception e) {
@@ -98,13 +90,7 @@ pipeline {
     post {
         success {
             echo 'Pipeline executed successfully!'
-            script {
-                def EC2_PUBLIC_IP = sh(
-                    script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4",
-                    returnStdout: true
-                ).trim()
-                echo "The application is now available at http://${EC2_PUBLIC_IP}:3000"
-            }
+            echo "The application is now available at http://${env.EC2_PUBLIC_IP}:3000"
         }
         failure {
             echo 'Pipeline execution failed!'
