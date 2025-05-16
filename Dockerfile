@@ -1,9 +1,10 @@
 # Build stage
-FROM node:18-alpine as build
+FROM node:18.19.0-alpine as build
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
+
 COPY . .
 RUN npm run build
 
@@ -12,7 +13,6 @@ FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Custom Nginx config to serve on port 3000
 RUN echo 'server { \
     listen 3000; \
     server_name localhost; \
