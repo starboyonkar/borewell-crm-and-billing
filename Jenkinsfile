@@ -4,11 +4,12 @@ pipeline {
     
     environment {
         // Define environment variables
-        DOCKER_IMAGE = 'wellspring-bill-craft'
+        DOCKER_IMAGE = 'borewell-crm-and-billing'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
-        CONTAINER_NAME = 'wellspring-bill-craft-container'
-        APP_PORT = '8080'
-        HOST_PORT = '80'
+        CONTAINER_NAME = 'borewell-crm-container'
+        APP_PORT = '3000'
+        HOST_PORT = '3000'
+        REPOSITORY_NAME = 'borewell-crm-and-billing'
     }
     
     stages {
@@ -72,7 +73,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     
-                    echo "Application deployed successfully and accessible at: http://${EC2_PUBLIC_IP}"
+                    echo "Application deployed successfully and accessible at: http://${EC2_PUBLIC_IP}:${HOST_PORT}"
                 }
             }
         }
@@ -81,6 +82,7 @@ pipeline {
     post {
         success {
             echo 'Pipeline executed successfully!'
+            echo "The application is now available at http://\${EC2_PUBLIC_IP}:3000"
         }
         failure {
             echo 'Pipeline execution failed!'
@@ -88,11 +90,6 @@ pipeline {
         always {
             // Clean up older Docker images to save disk space
             sh 'docker system prune -a -f || true'
-            
-            // Send notification - uncomment and configure if needed
-            // mail to: 'team@example.com',
-            //      subject: "Pipeline Status: ${currentBuild.fullDisplayName}",
-            //      body: "Build status: ${currentBuild.result}"
         }
     }
 }

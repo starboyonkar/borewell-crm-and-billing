@@ -5,9 +5,9 @@ This guide explains how to set up a GitHub webhook to automatically trigger the 
 
 ## Prerequisites
 
-- A GitHub repository containing your application code
+- Your GitHub repository: `borewell-crm-and-billing`
 - A running Jenkins server with the GitHub plugin installed
-- The Jenkins server must be accessible from the internet (or you can use tools like ngrok for local development)
+- The Jenkins server must be accessible from the internet on port 8080
 
 ## Steps to Configure the Webhook
 
@@ -16,10 +16,10 @@ This guide explains how to set up a GitHub webhook to automatically trigger the 
    - Go to "Configure" > "Build Triggers"
    - Select "GitHub hook trigger for GITScm polling"
    - Save the configuration
-   - Your webhook URL will be: `http://YOUR_JENKINS_URL/github-webhook/`
+   - Your webhook URL will be: `http://YOUR_EC2_PUBLIC_IP:8080/github-webhook/`
 
 2. **Configure the webhook in GitHub**
-   - Go to your GitHub repository
+   - Go to your GitHub repository `borewell-crm-and-billing`
    - Click on "Settings" > "Webhooks" > "Add webhook"
    - Set the Payload URL to your Jenkins webhook URL
    - Content type: select "application/json"
@@ -35,8 +35,17 @@ This guide explains how to set up a GitHub webhook to automatically trigger the 
 ## Troubleshooting
 
 - Check the GitHub webhook delivery history to see if requests were sent successfully
-- Verify that your Jenkins server is accessible from the internet
+- Verify that your Jenkins server is accessible from the internet on port 8080
 - Check Jenkins logs for any errors related to webhook processing
 - Ensure the GitHub plugin is properly configured in Jenkins
+
+## Port Configuration
+
+Your EC2 instance has the following ports configured:
+- SSH (22): Remote login
+- HTTP (80): Public access
+- HTTPS (443): SSL access
+- Custom TCP (3000): Vite/React application
+- Custom TCP (8080): Jenkins
 
 For more detailed information, refer to the [Jenkins GitHub plugin documentation](https://plugins.jenkins.io/github/).
