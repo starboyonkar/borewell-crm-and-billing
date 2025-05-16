@@ -7,7 +7,7 @@ pipeline {
         CONTAINER_NAME = 'borewell-crm-container'
         APP_PORT = '3000'          // Container (Nginx) port
         HOST_PORT = '3000'         // EC2 port
-        EC2_PUBLIC_IP = '43.204.32.19' // Replace with your EC2 public IP if needed
+        EC2_PUBLIC_IP = '65.1.65.83' // Replace with your EC2 public IP if needed
     }
 
     stages {
