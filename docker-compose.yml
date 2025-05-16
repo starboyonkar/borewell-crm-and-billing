@@ -1,0 +1,14 @@
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: borewell-crm-container
+    ports:
+      - "3000:8080"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
