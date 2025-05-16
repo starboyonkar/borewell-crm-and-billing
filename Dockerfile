@@ -1,35 +1,29 @@
-
-# Build stage
+# ---------- Build Stage ----------
 FROM node:18-alpine as build
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package.json package-lock.json ./
+# Install dependencies with cache optimization
+COPY package*.json ./
 RUN npm ci
 
-# Copy all other files and build
+# Copy app source and build it
 COPY . .
 RUN npm run build
 
-# Production stage
+# ---------- Production Stage ----------
 FROM nginx:alpine
 
-# Copy built files from build stage to nginx
+# Remove default nginx config if it exists
+RUN rm -f /etc/nginx/conf.d/default.conf
+
+# Copy build files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Create custom nginx configuration for port 3000
-RUN echo 'server { \
-    listen 3000; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Custom nginx config to serve on port 3000
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 3000 for the application
+# Expose custom port
 EXPOSE 3000
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
