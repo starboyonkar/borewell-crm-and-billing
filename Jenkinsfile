@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'borewell-crm-app'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         CONTAINER_NAME = 'borewell-crm-container'
-        APP_PORT = '3000'          // Container (Nginx) port
+        APP_PORT = '3000'          // Container will run on this port
         HOST_PORT = '3000'         // EC2 port
         EC2_PUBLIC_IP = '52.66.79.110' // Replace with your EC2 public IP if needed
     }
