@@ -1,12 +1,15 @@
+
 pipeline {
     agent any
     
     environment {
         // Define environment variables
-        REPOSITORY_NAME = 'borewell-crm-and-billing'
+        DOCKER_IMAGE = 'borewell-crm-and-billing'
+        DOCKER_TAG = "${env.BUILD_NUMBER}"
         CONTAINER_NAME = 'borewell-crm-container'
+        APP_PORT = '3000'
         HOST_PORT = '3000'
-        APP_PORT = '8080'
+        REPOSITORY_NAME = 'borewell-crm-and-billing'
     }
     
     stages {
@@ -46,21 +49,35 @@ pipeline {
             }
         }
         
-        stage('Deploy with Docker Compose') {
+        stage('Build Docker Image') {
             steps {
                 script {
                     try {
-                        // Ensure Docker Compose is installed
-                        sh "docker-compose -v || echo 'Docker Compose not installed'"
-                        
-                        // Stop existing containers and remove orphans
-                        sh "docker-compose down --remove-orphans || true"
-                        
-                        // Clean Docker cache if needed
+                        // Clean any previous Docker build artifacts
                         sh "docker system prune -f || true"
                         
-                        // Build and start the Docker containers
-                        sh "docker-compose up -d --build"
+                        // Build Docker image with detailed output
+                        sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                        echo 'Docker image built successfully'
+                    } catch (Exception e) {
+                        echo "Docker build failed: ${e.getMessage()}"
+                        sh "docker system prune -f || true"
+                        error "Docker build failed. See logs for details."
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    try {
+                        // Stop and remove existing container if it exists
+                        sh "docker stop ${CONTAINER_NAME} || true"
+                        sh "docker rm ${CONTAINER_NAME} || true"
+                        
+                        // Run the new container
+                        sh "docker run -d -p ${HOST_PORT}:${APP_PORT} --name ${CONTAINER_NAME} ${DOCKER_IMAGE}:${DOCKER_TAG}"
                         
                         // Get the EC2 instance's public IP
                         def EC2_PUBLIC_IP = sh(
@@ -71,10 +88,6 @@ pipeline {
                         echo "Application deployed successfully and accessible at: http://${EC2_PUBLIC_IP}:${HOST_PORT}"
                     } catch (Exception e) {
                         echo "Deployment failed: ${e.getMessage()}"
-                        
-                        // Additional error information
-                        sh "docker-compose logs"
-                        
                         error "Deployment failed. See logs for details."
                     }
                 }
@@ -95,12 +108,10 @@ pipeline {
         }
         failure {
             echo 'Pipeline execution failed!'
-            // Additional debug information on failure
-            sh "docker-compose logs || true"
         }
         always {
-            // Clean up older Docker images to save disk space, but keep the current ones
-            sh 'docker system prune -a -f --filter "until=24h" || true'
+            // Clean up older Docker images to save disk space
+            sh 'docker system prune -a -f || true'
         }
     }
 }
