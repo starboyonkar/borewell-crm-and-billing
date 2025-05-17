@@ -1,4 +1,4 @@
-# 🌟 Borewell CRM & Billing Web App
+## 🌟 “End-to-End CI/CD Pipeline for a Containerized React + Node.js Web App Using GitHub, Jenkins & Docker on AWS with Automated Deployment”
 
 Welcome to the Borewell CRM and Billing Application — a modern, responsive web app built using **Vite + React + Tailwind CSS + TypeScript** and containerized with **Docker**, deployed using **Jenkins CI/CD** on an **AWS EC2** server.
 
