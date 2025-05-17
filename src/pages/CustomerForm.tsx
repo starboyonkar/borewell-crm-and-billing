@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,6 @@ import { useInventory } from '../context/InventoryContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProductGallery, { useProducts } from '@/components/ProductGallery';
 import { convertToWords } from '@/utils/numberToWords';
 import { generateQRCodeURL, generateBillId } from '@/utils/qrCodeGenerator';
@@ -55,7 +55,6 @@ const CustomerForm: React.FC = () => {
   const { user } = useAuth();
   const { products } = useProducts();
 
-  const [showProductGallery, setShowProductGallery] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
   // Fix the issue with generateQRCodeURL by using string values for both parameters
@@ -229,7 +228,6 @@ const CustomerForm: React.FC = () => {
       }
     }
     
-    setShowProductGallery(false);
     calculateTotals();
   };
 
@@ -261,19 +259,10 @@ const CustomerForm: React.FC = () => {
     navigate(`/customers`);
   };
 
-  const isFieldDisabled = user?.role === 'customer' && ['name', 'email'].includes(name);
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold text-borewell-800">Add New Customer</h1>
-        
-        <Button 
-          type="button"
-          onClick={() => setShowProductGallery(true)}
-        >
-          Browse Products
-        </Button>
       </div>
 
       <Card className="shadow-sm">
@@ -356,6 +345,13 @@ const CustomerForm: React.FC = () => {
                 />
                 <p className="text-xs text-gray-500">Automatically generated for this service request</p>
               </div>
+            </div>
+            
+            {/* Product Gallery - Displayed by default */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-borewell-700 mb-4">Product Gallery</h3>
+              <p className="text-sm text-gray-500 mb-4">Click on any product to add it to your service</p>
+              <ProductGallery onSelectProduct={handleProductSelect} />
             </div>
 
             <div className="border-t pt-6">
@@ -627,15 +623,6 @@ const CustomerForm: React.FC = () => {
           </form>
         </CardContent>
       </Card>
-      
-      <Dialog open={showProductGallery} onOpenChange={setShowProductGallery}>
-        <DialogContent className="sm:max-w-[800px]">
-          <DialogHeader>
-            <DialogTitle>Product Gallery</DialogTitle>
-          </DialogHeader>
-          <ProductGallery onSelectProduct={handleProductSelect} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

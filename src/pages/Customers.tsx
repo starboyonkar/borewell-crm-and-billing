@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '../context/CustomerContext';
+import { useAuth } from '../context/AuthContext';
 
 const Customers: React.FC = () => {
   const { customers, exportToExcel } = useCustomers();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredCustomers = customers.filter(customer => 
@@ -28,13 +30,16 @@ const Customers: React.FC = () => {
             className="w-full md:w-64"
           />
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="border-borewell-600 text-borewell-600 hover:bg-borewell-50"
-              onClick={exportToExcel}
-            >
-              Export to Excel
-            </Button>
+            {/* Only show Export to Excel button for admin users */}
+            {user?.role === 'admin' && (
+              <Button 
+                variant="outline" 
+                className="border-borewell-600 text-borewell-600 hover:bg-borewell-50"
+                onClick={exportToExcel}
+              >
+                Export to Excel
+              </Button>
+            )}
             <Link to="/add-customer">
               <Button className="bg-borewell-600 hover:bg-borewell-700">Add Customer</Button>
             </Link>
