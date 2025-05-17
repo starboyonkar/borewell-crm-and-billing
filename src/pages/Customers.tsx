@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,16 +7,55 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '../context/CustomerContext';
 import { useAuth } from '../context/AuthContext';
 
+// Memoizing the Customer row to prevent unnecessary re-renders
+const CustomerRow = memo(({ customer, isAdmin }: { 
+  customer: any,
+  isAdmin: boolean
+}) => (
+  <tr key={customer.id} className="border-b border-gray-200 hover:bg-gray-50">
+    <td className="p-3">{customer.name}</td>
+    <td className="p-3">{customer.phone}</td>
+    <td className="p-3">{customer.serviceType}</td>
+    <td className="p-3">{new Date(customer.serviceDate).toLocaleDateString()}</td>
+    <td className="p-3">₹{customer.grandTotal.toLocaleString('en-IN')}</td>
+    <td className="p-3">
+      <span className={`px-2 py-1 rounded-full text-xs ${
+        customer.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' :
+        customer.paymentStatus === 'Pending' ? 'bg-red-100 text-red-800' :
+        'bg-yellow-100 text-yellow-800'
+      }`}>
+        {customer.paymentStatus}
+      </span>
+    </td>
+    <td className="p-3 text-center">
+      <div className="flex justify-center gap-2">
+        <Link to={`/customers/${customer.id}`}>
+          <Button variant="outline" size="sm" className="text-borewell-600 border-borewell-600 hover:bg-borewell-50">
+            View
+          </Button>
+        </Link>
+      </div>
+    </td>
+  </tr>
+));
+CustomerRow.displayName = 'CustomerRow';
+
 const Customers: React.FC = () => {
   const { customers, exportToExcel } = useCustomers();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm) ||
-    customer.address.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Performance optimization: Memoize filtered customers to prevent unnecessary filtering on every render
+  const filteredCustomers = React.useMemo(() => {
+    return customers.filter(customer => 
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.includes(searchTerm) ||
+      customer.address.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [customers, searchTerm]);
+
+  // Determine if user is admin
+  const isAdmin = user?.role === 'admin';
 
   return (
     <div className="space-y-6">
@@ -31,7 +70,7 @@ const Customers: React.FC = () => {
           />
           <div className="flex gap-2">
             {/* Only show Export to Excel button for admin users */}
-            {user?.role === 'admin' && (
+            {isAdmin && (
               <Button 
                 variant="outline" 
                 className="border-borewell-600 text-borewell-600 hover:bg-borewell-50"
@@ -68,31 +107,11 @@ const Customers: React.FC = () => {
               <tbody>
                 {filteredCustomers.length > 0 ? (
                   filteredCustomers.map(customer => (
-                    <tr key={customer.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="p-3">{customer.name}</td>
-                      <td className="p-3">{customer.phone}</td>
-                      <td className="p-3">{customer.serviceType}</td>
-                      <td className="p-3">{new Date(customer.serviceDate).toLocaleDateString()}</td>
-                      <td className="p-3">₹{customer.grandTotal.toLocaleString('en-IN')}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          customer.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                          customer.paymentStatus === 'Pending' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {customer.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex justify-center gap-2">
-                          <Link to={`/customers/${customer.id}`}>
-                            <Button variant="outline" size="sm" className="text-borewell-600 border-borewell-600 hover:bg-borewell-50">
-                              View
-                            </Button>
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
+                    <CustomerRow 
+                      key={customer.id} 
+                      customer={customer} 
+                      isAdmin={isAdmin} 
+                    />
                   ))
                 ) : (
                   <tr>

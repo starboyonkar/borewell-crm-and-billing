@@ -18,7 +18,15 @@ import Inventory from "./pages/Inventory";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,  // Improve form performance
+      staleTime: 30000,             // Reduce unnecessary refetches
+      retry: 1                      // Limit retries
+    },
+  },
+});
 
 // Auth Guard Component for protecting routes
 const AuthGuard = ({ allowedRoles, redirectPath = "/login" }: { allowedRoles?: string[], redirectPath?: string }) => {
@@ -67,6 +75,7 @@ const App = () => (
                       <Route path="/settings" element={<Settings />} />
                     </Route>
                     
+                    {/* Catch-all route */}
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>
