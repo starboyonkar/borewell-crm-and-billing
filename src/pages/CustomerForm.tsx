@@ -18,8 +18,16 @@ import { useCustomers } from '../context/CustomerContext';
 import { useInventory } from '../context/InventoryContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ProductGallery, { useProducts } from '@/components/ProductGallery';
+import { convertToWords } from '@/utils/numberToWords';
+import { generateQRCodeURL, generateBillId } from '@/utils/qrCodeGenerator';
+
+const ACCESSORIES = ['Pipe', 'Cable', 'Control Panel', 'Starter', 'Filter', 'Motor Guard', 'Clamps'];
 
 type FormData = {
+  id: string;
   name: string;
   phone: string;
   address: string;
@@ -36,20 +44,29 @@ type FormData = {
   paymentStatus: 'Paid' | 'Pending' | 'Partially Paid';
   paymentMethod?: string;
   notes?: string;
+  billId: string;
+  amountInWords: string;
+  qrCodeUrl: string;
 };
-
-const ACCESSORIES = ['Pipe', 'Cable', 'Control Panel', 'Starter', 'Filter', 'Motor Guard', 'Clamps'];
 
 const CustomerForm: React.FC = () => {
   const navigate = useNavigate();
   const { addCustomer } = useCustomers();
   const { inventory, getItemsByCategory } = useInventory();
+  const { user } = useAuth();
+  const { products } = useProducts();
+
+  const [showProductGallery, setShowProductGallery] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+
+  const billId = generateBillId();
   
   const [formData, setFormData] = useState<FormData>({
-    name: '',
+    id: Date.now().toString(),
+    name: user?.role === 'customer' ? (user?.fullName || '') : '',
     phone: '',
     address: '',
-    email: '',
+    email: user?.role === 'customer' ? (user?.email || '') : '',
     serviceDate: new Date().toISOString().split('T')[0],
     serviceType: 'Borewell Installation',
     borewellDepth: 100,
@@ -60,47 +77,102 @@ const CustomerForm: React.FC = () => {
     taxes: 0,
     grandTotal: 0,
     paymentStatus: 'Pending',
+    billId,
+    amountInWords: 'Zero Rupees Only',
+    qrCodeUrl: generateQRCodeURL(billId, Date.now().toString(), 0),
   });
 
   // Stock information state
-  const [availablePumps, setAvailablePumps] = useState<Array<{id: string, name: string, quantity: number}>>([]);
+  const [availablePumps, setAvailablePumps] = useState<Array<{id: string, name: string, quantity: number, price: number}>>([]);
   const [availablePumpModels, setAvailablePumpModels] = useState<string[]>([]);
-  const [accessoriesStock, setAccessoriesStock] = useState<Record<string, number>>({});
+  const [accessoriesStock, setAccessoriesStock] = useState<Record<string, {quantity: number, price: number}>>({});
+  const [selectedAccessories, setSelectedAccessories] = useState<Record<string, boolean>>({});
 
   // Load inventory data when form loads or serviceType/pumpType changes
   useEffect(() => {
-    // Get pumps from inventory
-    const pumps = getItemsByCategory('Pump');
-    setAvailablePumps(pumps.map(p => ({id: p.id, name: p.name, quantity: p.quantity})));
+    // Get pumps from inventory and add pricing
+    const pumps = getItemsByCategory('Pump')
+      .map(p => ({
+        id: p.id, 
+        name: p.name, 
+        quantity: p.quantity,
+        price: products.find(prod => prod.name.includes(p.name.split(' ')[0]))?.price || 15000
+      }));
+
+    setAvailablePumps(pumps);
     
     // Get available accessories
     const accessories = getItemsByCategory('Accessory');
-    const accessoryStock: Record<string, number> = {};
+    const accessoryStock: Record<string, {quantity: number, price: number}> = {};
     
     ACCESSORIES.forEach(acc => {
       const item = accessories.find(a => a.name.includes(acc));
-      accessoryStock[acc] = item?.quantity || 0;
+      const product = products.find(p => p.name.includes(acc));
+      accessoryStock[acc] = { 
+        quantity: item?.quantity || 0,
+        price: product?.price || 1000
+      };
     });
     
     setAccessoriesStock(accessoryStock);
-  }, [getItemsByCategory, formData.serviceType]);
+  }, [getItemsByCategory, formData.serviceType, products]);
+
+  // Recalculate totals whenever relevant fields change
+  useEffect(() => {
+    calculateTotals();
+  }, [formData.pumpType, formData.pumpModel, formData.accessories]);
+
+  const calculateTotals = () => {
+    let baseAmount = 0;
+    
+    // Add pump cost if selected
+    if (formData.pumpType && formData.pumpModel && formData.pumpType !== 'None') {
+      const pumpName = `${formData.pumpType} ${formData.pumpModel}`.trim();
+      const pump = availablePumps.find(p => p.name === pumpName);
+      if (pump) {
+        baseAmount += pump.price;
+      }
+    }
+    
+    // Add accessories cost
+    if (formData.accessories && formData.accessories.length > 0) {
+      for (const accessory of formData.accessories) {
+        baseAmount += accessoriesStock[accessory]?.price || 0;
+      }
+    }
+    
+    // Add borewell depth cost if applicable
+    if (formData.serviceType === 'Borewell Installation' && formData.borewellDepth) {
+      baseAmount += formData.borewellDepth * 500; // ₹500 per foot
+    }
+    
+    // Calculate taxes and grand total
+    const taxes = baseAmount * 0.18; // 18% GST
+    const grandTotal = baseAmount + taxes;
+    
+    // Generate amount in words
+    const amountInWords = convertToWords(grandTotal);
+    
+    // Generate QR code URL
+    const qrCodeUrl = generateQRCodeURL(formData.billId, formData.id, grandTotal);
+    
+    setFormData(prev => ({
+      ...prev,
+      totalAmount: baseAmount,
+      taxes,
+      grandTotal,
+      amountInWords,
+      qrCodeUrl
+    }));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Recalculate totals if amount changes
-    if (name === 'totalAmount') {
-      const totalAmount = parseFloat(value) || 0;
-      const taxes = totalAmount * 0.18; // 18% GST
-      const grandTotal = totalAmount + taxes;
-      
-      setFormData(prev => ({
-        ...prev,
-        totalAmount,
-        taxes,
-        grandTotal
-      }));
+    // Special case for borewell depth - recalculate totals
+    if (name === 'borewellDepth') {
+      setTimeout(calculateTotals, 0);
     }
   };
 
@@ -118,12 +190,47 @@ const CustomerForm: React.FC = () => {
   };
 
   const handleAccessoryToggle = (value: string, checked: boolean) => {
+    const updatedAccessories = checked 
+      ? [...(formData.accessories || []), value]
+      : (formData.accessories || []).filter(item => item !== value);
+    
     setFormData(prev => ({
       ...prev,
-      accessories: checked 
-        ? [...(prev.accessories || []), value]
-        : (prev.accessories || []).filter(item => item !== value)
+      accessories: updatedAccessories
     }));
+    
+    setSelectedAccessories(prev => ({
+      ...prev,
+      [value]: checked
+    }));
+  };
+
+  const handleProductSelect = (product: any) => {
+    // Handle selection based on product category
+    if (product.category === 'Pump') {
+      const pumpType = product.name.split(' ')[0]; // e.g. "Submersible"
+      handleSelectChange('pumpType', pumpType);
+      
+      // Find a matching pump model if available
+      const models = getItemsByCategory('Pump')
+        .filter(p => p.name.includes(pumpType))
+        .map(p => p.name.replace(pumpType, '').trim());
+      
+      if (models.length > 0) {
+        handleSelectChange('pumpModel', models[0]);
+      }
+    } else if (product.category === 'Accessory') {
+      // Find matching accessory
+      for (const acc of ACCESSORIES) {
+        if (product.name.includes(acc)) {
+          handleAccessoryToggle(acc, true);
+          break;
+        }
+      }
+    }
+    
+    setShowProductGallery(false);
+    calculateTotals();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -143,7 +250,7 @@ const CustomerForm: React.FC = () => {
     // Check if selected accessories are in stock
     if (formData.accessories && formData.accessories.length > 0) {
       for (const accessory of formData.accessories) {
-        if (accessoriesStock[accessory] === 0) {
+        if (accessoriesStock[accessory].quantity === 0) {
           toast.error(`${accessory} is out of stock!`);
           return;
         }
@@ -154,10 +261,19 @@ const CustomerForm: React.FC = () => {
     navigate(`/customers`);
   };
 
+  const isFieldDisabled = user?.role === 'customer' && ['name', 'email'].includes(name);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold text-borewell-800">Add New Customer</h1>
+        
+        <Button 
+          type="button"
+          onClick={() => setShowProductGallery(true)}
+        >
+          Browse Products
+        </Button>
       </div>
 
       <Card className="shadow-sm">
@@ -176,6 +292,8 @@ const CustomerForm: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Enter full name" 
                   required 
+                  readOnly={user?.role === 'customer'}
+                  className={user?.role === 'customer' ? "bg-gray-100" : ""}
                 />
               </div>
 
@@ -211,7 +329,9 @@ const CustomerForm: React.FC = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="Enter email address" 
+                  placeholder="Enter email address"
+                  readOnly={user?.role === 'customer'}
+                  className={user?.role === 'customer' ? "bg-gray-100" : ""}
                 />
               </div>
 
@@ -225,6 +345,16 @@ const CustomerForm: React.FC = () => {
                   onChange={handleInputChange}
                   required 
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Bill ID</Label>
+                <Input 
+                  value={formData.billId} 
+                  readOnly 
+                  className="bg-gray-100" 
+                />
+                <p className="text-xs text-gray-500">Automatically generated for this service request</p>
               </div>
             </div>
 
@@ -255,13 +385,18 @@ const CustomerForm: React.FC = () => {
                 {formData.serviceType === 'Borewell Installation' && (
                   <div className="space-y-2">
                     <Label htmlFor="borewellDepth">Borewell Depth (ft)</Label>
-                    <Input 
-                      id="borewellDepth" 
-                      name="borewellDepth"
-                      type="number"
-                      value={formData.borewellDepth || ''}
-                      onChange={handleInputChange}
-                    />
+                    <div className="flex items-center">
+                      <Input 
+                        id="borewellDepth" 
+                        name="borewellDepth"
+                        type="number"
+                        value={formData.borewellDepth || ''}
+                        onChange={handleInputChange}
+                      />
+                      <Badge className="ml-2" variant="outline">
+                        ₹500/ft
+                      </Badge>
+                    </div>
                   </div>
                 )}
 
@@ -319,7 +454,7 @@ const CustomerForm: React.FC = () => {
                           .filter(pump => pump.name.includes(formData.pumpType || ''))
                           .map(pump => (
                             <SelectItem key={pump.id} value={pump.name.replace(formData.pumpType || '', '').trim()}>
-                              {pump.name.replace(formData.pumpType || '', '').trim()}
+                              {pump.name.replace(formData.pumpType || '', '').trim()} - ₹{pump.price.toLocaleString('en-IN')}
                               <Badge 
                                 className="ml-2" 
                                 variant={pump.quantity > 0 ? "outline" : "destructive"}
@@ -344,21 +479,21 @@ const CustomerForm: React.FC = () => {
                           onCheckedChange={(checked) => 
                             handleAccessoryToggle(accessory, checked as boolean)
                           }
-                          disabled={accessoriesStock[accessory] === 0}
+                          disabled={accessoriesStock[accessory]?.quantity === 0}
                         />
                         <label
                           htmlFor={`accessory-${accessory}`}
                           className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 ${
-                            accessoriesStock[accessory] === 0 ? 'text-gray-400' : ''
+                            accessoriesStock[accessory]?.quantity === 0 ? 'text-gray-400' : ''
                           }`}
                         >
-                          {accessory}
+                          {accessory} - ₹{accessoriesStock[accessory]?.price.toLocaleString('en-IN')}
                           <Badge 
-                            variant={accessoriesStock[accessory] > 0 ? "outline" : "destructive"} 
+                            variant={accessoriesStock[accessory]?.quantity > 0 ? "outline" : "destructive"} 
                             className="text-xs"
                           >
-                            {accessoriesStock[accessory] > 0 
-                              ? `${accessoriesStock[accessory]} in stock` 
+                            {accessoriesStock[accessory]?.quantity > 0 
+                              ? `${accessoriesStock[accessory]?.quantity} in stock` 
                               : 'Out of stock'}
                           </Badge>
                         </label>
@@ -374,15 +509,16 @@ const CustomerForm: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="totalAmount">Amount (₹)*</Label>
+                  <Label htmlFor="totalAmount">Amount (₹)</Label>
                   <Input 
                     id="totalAmount" 
                     name="totalAmount"
                     type="number"
                     value={formData.totalAmount || ''}
-                    onChange={handleInputChange}
-                    required 
+                    readOnly
+                    className="bg-gray-100"
                   />
+                  <p className="text-xs text-gray-500">Calculated based on selected items</p>
                 </div>
 
                 <div className="space-y-2">
@@ -392,8 +528,8 @@ const CustomerForm: React.FC = () => {
                     name="taxes"
                     type="number"
                     value={formData.taxes || ''}
-                    onChange={handleInputChange}
-                    disabled
+                    readOnly
+                    className="bg-gray-100"
                   />
                 </div>
 
@@ -404,9 +540,14 @@ const CustomerForm: React.FC = () => {
                     name="grandTotal"
                     type="number"
                     value={formData.grandTotal || ''}
-                    onChange={handleInputChange}
-                    disabled
+                    readOnly
+                    className="bg-gray-100"
                   />
+                </div>
+
+                <div className="space-y-2 md:col-span-3">
+                  <Label>Amount In Words</Label>
+                  <Input value={formData.amountInWords} readOnly className="bg-gray-100" />
                 </div>
 
                 <div className="space-y-2">
@@ -455,6 +596,16 @@ const CustomerForm: React.FC = () => {
                     placeholder="Enter additional notes" 
                   />
                 </div>
+
+                {formData.grandTotal > 0 && (
+                  <div className="md:col-span-3 flex justify-center">
+                    <div className="text-center">
+                      <p className="text-sm font-medium mb-2">Bill Verification QR Code</p>
+                      <img src={formData.qrCodeUrl} alt="Bill QR Code" className="mx-auto" />
+                      <p className="text-xs text-gray-500 mt-1">Scan to verify bill details</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -476,6 +627,15 @@ const CustomerForm: React.FC = () => {
           </form>
         </CardContent>
       </Card>
+      
+      <Dialog open={showProductGallery} onOpenChange={setShowProductGallery}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Product Gallery</DialogTitle>
+          </DialogHeader>
+          <ProductGallery onSelectProduct={handleProductSelect} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

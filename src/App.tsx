@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CustomerProvider } from "./context/CustomerContext";
 import { InventoryProvider } from "./context/InventoryContext";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -20,6 +20,22 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Auth Guard Component for protecting routes
+const AuthGuard = ({ allowedRoles, redirectPath = "/login" }: { allowedRoles?: string[], redirectPath?: string }) => {
+  const { isAuthenticated, user } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to={redirectPath} replace />;
+  }
+  
+  // Check user role against allowed roles if roles are specified
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <Outlet />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -33,13 +49,24 @@ const App = () => (
                 <Routes>
                   <Route element={<Layout />}>
                     <Route path="/login" element={<Login />} />
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/customers" element={<Customers />} />
-                    <Route path="/customers/:id" element={<CustomerDetail />} />
-                    <Route path="/add-customer" element={<CustomerForm />} />
-                    <Route path="/inventory" element={<Inventory />} />
-                    <Route path="/settings" element={<Settings />} />
+                    
+                    {/* Public routes */}
+                    <Route index element={<Navigate to="/dashboard" />} />
+                    
+                    {/* Protected routes for all authenticated users */}
+                    <Route element={<AuthGuard />}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/:id" element={<CustomerDetail />} />
+                      <Route path="/add-customer" element={<CustomerForm />} />
+                    </Route>
+                    
+                    {/* Admin-only routes */}
+                    <Route element={<AuthGuard allowedRoles={['admin']} />}>
+                      <Route path="/inventory" element={<Inventory />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Route>
+                    
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>

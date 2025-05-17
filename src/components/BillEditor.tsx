@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,9 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useCustomers } from '@/context/CustomerContext';
 import { CustomerData } from '@/context/CustomerContext';
+import { convertToWords } from '@/utils/numberToWords';
+import { generateQRCodeURL } from '@/utils/qrCodeGenerator';
 
 type BillEditorProps = {
   customer: CustomerData;
@@ -39,6 +40,13 @@ const BillEditor: React.FC<BillEditorProps> = ({ customer }) => {
     paymentStatus: customer.paymentStatus as 'Paid' | 'Pending' | 'Partially Paid',
     paymentMethod: customer.paymentMethod || '',
     notes: customer.notes || '',
+    amountInWords: customer.amountInWords || convertToWords(customer.grandTotal),
+    qrCodeUrl: customer.qrCodeUrl || generateQRCodeURL(
+      customer.billId || 'BW-Unknown', 
+      customer.id, 
+      customer.grandTotal
+    ),
+    billId: customer.billId || 'BW-Unknown'
   });
 
   // Calculate grand total whenever totalAmount or taxes change
@@ -48,26 +56,41 @@ const BillEditor: React.FC<BillEditorProps> = ({ customer }) => {
 
   const handleTotalAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const totalAmount = parseFloat(e.target.value) || 0;
-    const grandTotal = calculateGrandTotal(totalAmount, billDetails.taxes);
+    const taxes = totalAmount * 0.18; // 18% GST
+    const grandTotal = calculateGrandTotal(totalAmount, taxes);
+    const amountInWords = convertToWords(grandTotal);
+    
     setBillDetails({
       ...billDetails,
       totalAmount,
+      taxes,
       grandTotal,
+      amountInWords,
     });
   };
 
   const handleTaxesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const taxes = parseFloat(e.target.value) || 0;
     const grandTotal = calculateGrandTotal(billDetails.totalAmount, taxes);
+    const amountInWords = convertToWords(grandTotal);
+    
     setBillDetails({
       ...billDetails,
       taxes,
       grandTotal,
+      amountInWords,
     });
   };
 
   const handleSave = () => {
     try {
+      // Generate new QR code with updated amount
+      const qrCodeUrl = generateQRCodeURL(
+        billDetails.billId,
+        customer.id, 
+        billDetails.grandTotal
+      );
+      
       updateCustomer(customer.id, {
         totalAmount: billDetails.totalAmount,
         taxes: billDetails.taxes,
@@ -75,19 +98,15 @@ const BillEditor: React.FC<BillEditorProps> = ({ customer }) => {
         paymentStatus: billDetails.paymentStatus,
         paymentMethod: billDetails.paymentMethod,
         notes: billDetails.notes,
+        amountInWords: billDetails.amountInWords,
+        qrCodeUrl: qrCodeUrl,
+        billId: billDetails.billId
       });
       
       setIsOpen(false);
-      toast({
-        title: 'Success',
-        description: 'Bill details updated successfully',
-      });
+      toast.success('Bill details updated successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update bill details',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update bill details');
     }
   };
 
@@ -107,6 +126,16 @@ const BillEditor: React.FC<BillEditorProps> = ({ customer }) => {
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="billId">Bill ID</Label>
+            <Input
+              id="billId"
+              value={billDetails.billId}
+              readOnly
+              className="bg-gray-100"
+            />
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="totalAmount">Service Amount (₹)</Label>
@@ -134,6 +163,16 @@ const BillEditor: React.FC<BillEditorProps> = ({ customer }) => {
               id="grandTotal"
               type="number"
               value={billDetails.grandTotal}
+              readOnly
+              className="bg-gray-100"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="amountInWords">Amount In Words</Label>
+            <Input
+              id="amountInWords"
+              value={billDetails.amountInWords}
               readOnly
               className="bg-gray-100"
             />
@@ -179,6 +218,14 @@ const BillEditor: React.FC<BillEditorProps> = ({ customer }) => {
               placeholder="Add any additional notes about the bill"
               rows={3}
             />
+          </div>
+          
+          <div className="flex justify-center">
+            <div className="text-center">
+              <p className="text-sm font-medium mb-2">Bill Verification QR Code</p>
+              <img src={billDetails.qrCodeUrl} alt="Bill QR Code" className="mx-auto" />
+              <p className="text-xs text-gray-500 mt-1">Scan to verify bill details</p>
+            </div>
           </div>
         </div>
 
