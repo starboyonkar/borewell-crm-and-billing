@@ -217,6 +217,36 @@ nodejs --version
 npm --version
 ```
 
+---
+
+## 📚 Project Purpose
+
+This project was developed as part of a hands-on learning experience to understand the end-to-end process of modern web application deployment using:
+
+- **Jenkins CI/CD**
+- **Docker**
+- **React + Vite**
+- **Amazon EC2 (Linux)**
+- **Nginx reverse proxy**
+- **GitHub integration**
+
+It covers building, testing, containerizing, and deploying a full-stack web application in a real server environment — with a focus on **DevOps principles** and **cloud infrastructure**.
+
+---
+
+## 👤 Author Profile
+
+**Name:** Onkar Chaugule  
+🎓 **Education:** BTech in Electronics & Telecommunication  
+📍 **Location:** Solapur, Maharashtra, India  
+💼 **Interests:** DevOps, Embedded IoT, Cloud Engineering, Full-Stack Development  
+📧 **Email:** onkarchougule501@gmail.com  
+🔗 **LinkedIn:** [linkedin.com/in/onkar-chaugule](https://linkedin.com/in/onkar-chaugule)
+
+---
+
+> 🛠️ *This repository is maintained as an educational project. Contributions and feedback are welcome!*  
+> ⭐ *If you find it useful, feel free to star and share!*
 
 
 
