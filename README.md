@@ -173,11 +173,37 @@ docker build -t test-image .
 
 ---
 
-## 🧪 Useful System Utilities
+## 📊 System Monitoring Commands for Amazon Linux
+
+To monitor CPU, memory, and network traffic on your Amazon Linux EC2 instance, use the following commands:
+
+# Real-time CPU and memory usage
 ```bash
-top             # Monitor system processes
-ps              # List current running processes
-df -u           # View disk usage
+top
+```
+# Detailed memory usage
+```bash
+free -m
+```
+# Summary of system usage (CPU, memory, disk, network)
+```bash
+vmstat 1
+```
+# Detailed performance report (requires sysstat)
+```bash
+sudo yum install sysstat -y
+mpstat -P ALL 1
+```
+---
+
+## 📡 Network Traffic Monitoring
+```bash
+ifconfig
+```
+# Real-time network traffic (requires iftop)
+```bash
+sudo yum install iftop -y
+sudo iftop
 ```
 
 ---
