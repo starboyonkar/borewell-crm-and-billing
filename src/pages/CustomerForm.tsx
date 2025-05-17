@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -59,6 +58,7 @@ const CustomerForm: React.FC = () => {
   const [showProductGallery, setShowProductGallery] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
+  // Fix the issue with generateQRCodeURL by using string values for both parameters
   const billId = generateBillId();
   
   const [formData, setFormData] = useState<FormData>({

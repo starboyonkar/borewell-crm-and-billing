@@ -20,16 +20,26 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Define a proper type for users that includes all possible roles
+type UserRecord = {
+  id: string;
+  username: string;
+  password: string;
+  role: 'admin' | 'user' | 'customer';
+  fullName?: string;
+  email?: string;
+};
+
 // Mock user database with default admin and user accounts
-const USERS = [
-  { id: '1', username: 'admin', password: 'admin123', role: 'admin' as const },
-  { id: '2', username: 'user', password: 'user123', role: 'user' as const },
+const USERS: UserRecord[] = [
+  { id: '1', username: 'admin', password: 'admin123', role: 'admin' },
+  { id: '2', username: 'user', password: 'user123', role: 'user' },
 ];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [users, setUsers] = useState(USERS);
+  const [users, setUsers] = useState<UserRecord[]>(USERS);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -49,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUsers) {
       try {
         const parsedUsers = JSON.parse(savedUsers);
-        setUsers([...USERS, ...parsedUsers.filter((u: User) => u.role === 'customer')]);
+        setUsers([...USERS, ...parsedUsers.filter((u: UserRecord) => u.role === 'customer')]);
       } catch (error) {
         console.error('Error parsing saved users:', error);
       }
@@ -63,41 +73,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fullName?: string,
     email?: string
   ): Promise<boolean> => {
-    // For regular admin/user login
-    if (role !== 'customer') {
-      const user = users.find(
-        (u) => u.username === username && u.password === password && u.role === role
-      );
+    // For regular admin/user login or customer login
+    const user = users.find(
+      (u) => u.username === username && u.password === password && u.role === role
+    );
 
-      if (user) {
-        const { password: _, ...userWithoutPassword } = user;
-        setUser(userWithoutPassword);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-        toast.success('Login successful!');
-        return true;
-      } else {
-        toast.error('Invalid username or password');
-        return false;
-      }
-    } 
-    // For customer login (email-based)
-    else {
-      const user = users.find(
-        (u) => u.username === username && u.password === password && u.role === 'customer'
-      );
-
-      if (user) {
-        const { password: _, ...userWithoutPassword } = user;
-        setUser(userWithoutPassword);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-        toast.success('Login successful!');
-        return true;
-      } else {
-        toast.error('Invalid email or password');
-        return false;
-      }
+    if (user) {
+      // Using a proper object destructuring without rest spread
+      const userInfo: User = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        email: user.email
+      };
+      
+      setUser(userInfo);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      toast.success('Login successful!');
+      return true;
+    } else {
+      toast.error(role === 'customer' ? 'Invalid email or password' : 'Invalid username or password');
+      return false;
     }
   };
 
@@ -110,11 +108,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Create new customer account
-    const newCustomer = {
+    const newCustomer: UserRecord = {
       id: Date.now().toString(),
       username: email,
       password,
-      role: 'customer' as const,
+      role: 'customer',
       fullName,
       email
     };
@@ -123,14 +121,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedUsers = [...users, newCustomer];
     setUsers(updatedUsers);
     
-    // Save to localStorage
-    const { password: _, ...customerWithoutPassword } = newCustomer;
+    // Save to localStorage - properly type the customer
+    const customerInfo: User = {
+      id: newCustomer.id,
+      username: newCustomer.username,
+      role: newCustomer.role,
+      fullName: newCustomer.fullName,
+      email: newCustomer.email
+    };
+    
     localStorage.setItem('users', JSON.stringify(updatedUsers.filter(u => u.role === 'customer')));
     
     // Auto-login the new customer
-    setUser(customerWithoutPassword);
+    setUser(customerInfo);
     setIsAuthenticated(true);
-    localStorage.setItem('user', JSON.stringify(customerWithoutPassword));
+    localStorage.setItem('user', JSON.stringify(customerInfo));
     
     toast.success('Registration successful!');
     return true;
@@ -147,7 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{ 
       user, 
       login, 
-      logout, 
+      logout: () => {
+        setUser(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem('user');
+        toast.info('You have been logged out');
+      }, 
       isAuthenticated, 
       registerCustomer 
     }}>

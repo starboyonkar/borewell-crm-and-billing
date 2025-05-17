@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext } from 'react';
 import { toast } from 'sonner';
 import { utils, writeFile } from 'xlsx';
@@ -22,6 +21,9 @@ export type CustomerData = {
   paymentMethod?: string;
   notes?: string;
   createdAt: string;
+  amountInWords?: string;
+  qrCodeUrl?: string;
+  billId?: string;
 };
 
 type CustomerContextType = {
@@ -56,6 +58,9 @@ const INITIAL_CUSTOMERS: CustomerData[] = [
     paymentMethod: 'Cash',
     notes: 'Installation completed successfully',
     createdAt: '2023-05-15T10:30:00Z',
+    amountInWords: 'Twenty Nine Thousand Five Hundred Rupees Only',
+    qrCodeUrl: 'https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=%7B%22billId%22%3A%22BW-12345%22%2C%22customerId%22%3A%221%22%2C%22amount%22%3A29500%7D',
+    billId: 'BW-12345',
   },
 ];
 
