@@ -66,9 +66,8 @@ const Header: React.FC = () => {
           <Link to="/customers" className="hover:text-blue-200 transition">
             Customers
           </Link>
-          <Link to="/add-customer" className="hover:text-blue-200 transition">
-            New Customer
-          </Link>
+          <Link to="/add-customer" className="hover:text-blue-200 transition px-0"> Shop Now
+        </Link>
           <Link to="/inventory" className="hover:text-blue-200 transition">
             Inventory
           </Link>
