@@ -16,7 +16,7 @@ const Header: React.FC = () => {
     navigate('/login');
   };
   return <header className="bg-borewell-700 text-white shadow-md">
-      <div className="container py-4 flex justify-between items-center mx-0 px-px">
+      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Sheet>
             <SheetTrigger asChild className="block md:hidden">
@@ -54,16 +54,23 @@ const Header: React.FC = () => {
           </Sheet>
           
           <Link to="/dashboard" className="flex items-center">
-            <img src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" alt="Borewell Services Logo" className="h-10 w-auto mr-2 object-fill" />
-            <span className="text-xl font-bold">Borewell Services </span>
+            <img src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" alt="Borewell Services Logo" className="h-10 w-auto mr-2" />
+            <span className="text-xl font-bold">Borewell Services</span>
           </Link>
         </div>
 
         <nav className="hidden md:flex space-x-6">
-          <Link to="/dashboard" className="hover:text-blue-200 transition">Dashboard</Link>
-          <Link to="/customers" className="hover:text-blue-200 transition">Customers</Link>
-          <Link to="/add-customer" className="hover:text-blue-200 transition px-0">Shop Now</Link>
-          <Link to="/inventory" className="hover:text-blue-200 transition">  </Link>
+          <Link to="/dashboard" className="hover:text-blue-200 transition">
+            Dashboard
+          </Link>
+          <Link to="/customers" className="hover:text-blue-200 transition">
+            Customers
+          </Link>
+          <Link to="/add-customer" className="hover:text-blue-200 transition px-0"> Shop Now
+        </Link>
+          <Link to="/inventory" className="hover:text-blue-200 transition">
+            Inventory
+          </Link>
           {user?.role === 'admin' && <Link to="/settings" className="hover:text-blue-200 transition">
               Settings
             </Link>}
@@ -74,7 +81,7 @@ const Header: React.FC = () => {
           <span className="hidden md:inline">
             {user?.username} ({user?.role})
           </span>
-          <Button variant="outline" onClick={handleLogout} className="text-white border-white font-bold bg-sky-600 hover:bg-sky-500">Logout 💻</Button>
+          <Button variant="outline" onClick={handleLogout} className="text-white border-white bg-red-800 hover:bg-red-700 font-bold">Logout 💻</Button>
         </div>
       </div>
     </header>;
