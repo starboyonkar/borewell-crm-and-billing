@@ -88,7 +88,7 @@ const Login: React.FC = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-4">
                 <TabsTrigger value="admin" className="text-base bg-slate-500 hover:bg-slate-400">Admin Login</TabsTrigger>
-                <TabsTrigger value="customer" className="bg-slate-500 hover:bg-slate-400 font-normal text-base text-inherit">Customer</TabsTrigger>
+                <TabsTrigger value="customer" className="text-inherit text-base font-bold bg-slate-50">Customer</TabsTrigger>
               </TabsList>
               
               <TabsContent value="admin">
