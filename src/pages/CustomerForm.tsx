@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductGallery, { useProducts } from '@/components/ProductGallery';
 import { convertToWords } from '@/utils/numberToWords';
 import { generateQRCodeURL, generateBillId } from '@/utils/qrCodeGenerator';
+import SelectedProductsTable, { SelectedProduct } from '@/components/SelectedProductsTable';
 import { ShoppingCart, Save, ShoppingBag } from 'lucide-react';
 
 const ACCESSORIES = ['Pipe', 'Cable', 'Control Panel', 'Starter', 'Filter', 'Motor Guard', 'Clamps'];
@@ -46,7 +47,6 @@ type FormData = {
   notes?: string;
   billId: string;
   amountInWords: string;
-  qrCodeUrl: string;
 };
 
 const CustomerForm: React.FC = () => {
@@ -56,9 +56,9 @@ const CustomerForm: React.FC = () => {
   const { user } = useAuth();
   const { products } = useProducts();
 
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [formIsValid, setFormIsValid] = useState(false);
-
+  
   // Fix the issue with generateQRCodeURL by using string values for both parameters
   const billId = generateBillId();
   
@@ -80,7 +80,6 @@ const CustomerForm: React.FC = () => {
     paymentStatus: 'Pending',
     billId,
     amountInWords: 'Zero Rupees Only',
-    qrCodeUrl: generateQRCodeURL(billId, Date.now().toString(), 0),
   });
 
   // Stock information state
@@ -96,8 +95,8 @@ const CustomerForm: React.FC = () => {
       formData[field as keyof FormData] && 
       formData[field as keyof FormData].toString().trim() !== ''
     );
-    setFormIsValid(isValid && formData.grandTotal > 0);
-  }, [formData]);
+    setFormIsValid(isValid && selectedProducts.length > 0);
+  }, [formData, selectedProducts]);
 
   // Load inventory data when form loads or serviceType/pumpType changes
   useEffect(() => {
@@ -128,31 +127,18 @@ const CustomerForm: React.FC = () => {
     setAccessoriesStock(accessoryStock);
   }, [getItemsByCategory, formData.serviceType, products]);
 
-  // Recalculate totals whenever relevant fields change
+  // Recalculate totals whenever products change
   useEffect(() => {
     calculateTotals();
-  }, [formData.pumpType, formData.pumpModel, formData.accessories, formData.borewellDepth]);
+  }, [selectedProducts, formData.borewellDepth]);
 
   const calculateTotals = () => {
-    let baseAmount = 0;
-    
-    // Add pump cost if selected
-    if (formData.pumpType && formData.pumpModel && formData.pumpType !== 'None') {
-      const pumpName = `${formData.pumpType} ${formData.pumpModel}`.trim();
-      const pump = availablePumps.find(p => p.name === pumpName);
-      if (pump) {
-        baseAmount += pump.price;
-      }
-    }
-    
-    // Add accessories cost
-    if (formData.accessories && formData.accessories.length > 0) {
-      for (const accessory of formData.accessories) {
-        baseAmount += accessoriesStock[accessory]?.price || 0;
-      }
-    }
+    // Calculate base amount from selected products
+    const productTotal = selectedProducts.reduce((sum, product) => 
+      sum + (product.price * product.quantity), 0);
     
     // Add borewell depth cost if applicable
+    let baseAmount = productTotal;
     if (formData.serviceType === 'Borewell Installation' && formData.borewellDepth) {
       baseAmount += formData.borewellDepth * 500; // ₹500 per foot
     }
@@ -164,16 +150,12 @@ const CustomerForm: React.FC = () => {
     // Generate amount in words
     const amountInWords = convertToWords(grandTotal);
     
-    // Generate QR code URL
-    const qrCodeUrl = generateQRCodeURL(formData.billId, formData.id, grandTotal);
-    
     setFormData(prev => ({
       ...prev,
       totalAmount: baseAmount,
       taxes,
       grandTotal,
-      amountInWords,
-      qrCodeUrl
+      amountInWords
     }));
   };
 
@@ -210,18 +192,45 @@ const CustomerForm: React.FC = () => {
       [value]: checked
     }));
 
-    // Show toast notification
+    // Update selected products for the table
     if (checked) {
-      toast.success(`Added ${value} to your bill`);
+      // Find matching product in product gallery
+      const product = products.find(p => p.name.includes(value));
+      if (product) {
+        addProductToSelection(product);
+        toast.success(`Added ${value} to your bill`);
+      }
     } else {
-      toast.info(`Removed ${value} from your bill`);
+      // Find and remove the accessory product
+      const accessoryProduct = selectedProducts.find(p => p.name.includes(value));
+      if (accessoryProduct) {
+        removeProductFromSelection(accessoryProduct.id);
+        toast.info(`Removed ${value} from your bill`);
+      }
     }
   };
 
-  const handleProductSelect = (product: any) => {
-    setSelectedProduct(product);
+  const addProductToSelection = (product: any) => {
+    // Check if product is already in the selected list
+    const existingProductIndex = selectedProducts.findIndex(p => p.id === product.id);
     
-    // Handle selection based on product category
+    if (existingProductIndex >= 0) {
+      // Product already exists, update quantity
+      const updatedProducts = [...selectedProducts];
+      updatedProducts[existingProductIndex] = {
+        ...updatedProducts[existingProductIndex],
+        quantity: updatedProducts[existingProductIndex].quantity + 1
+      };
+      setSelectedProducts(updatedProducts);
+    } else {
+      // Add new product
+      setSelectedProducts(prev => [
+        ...prev, 
+        { ...product, quantity: 1 }
+      ]);
+    }
+    
+    // Handle pump selection
     if (product.category === 'Pump') {
       const pumpType = product.name.split(' ')[0]; // e.g. "Submersible"
       handleSelectChange('pumpType', pumpType);
@@ -246,6 +255,39 @@ const CustomerForm: React.FC = () => {
       }
     }
   };
+  
+  const removeProductFromSelection = (productId: string) => {
+    // Find the product
+    const product = selectedProducts.find(p => p.id === productId);
+    
+    // Remove from selected products
+    setSelectedProducts(prev => prev.filter(p => p.id !== productId));
+    
+    // If it's a pump, clear pump selection
+    if (product?.category === 'Pump') {
+      setFormData(prev => ({
+        ...prev,
+        pumpType: '',
+        pumpModel: ''
+      }));
+    }
+    
+    // If it's an accessory, update accessories list
+    if (product?.category === 'Accessory') {
+      for (const acc of ACCESSORIES) {
+        if (product.name.includes(acc)) {
+          handleAccessoryToggle(acc, false);
+          break;
+        }
+      }
+    }
+    
+    toast.info(`Removed ${product?.name || 'product'} from your bill`);
+  };
+
+  const handleProductSelect = (product: any) => {
+    addProductToSelection(product);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,28 +297,38 @@ const CustomerForm: React.FC = () => {
       return;
     }
     
-    // Check if required pump is in stock
-    if (formData.pumpType && formData.pumpModel) {
-      const pumpName = `${formData.pumpType} ${formData.pumpModel}`.trim();
-      const pump = availablePumps.find(p => p.name === pumpName);
-      
-      if (!pump || pump.quantity === 0) {
-        toast.error(`${pumpName} is out of stock!`);
-        return;
-      }
-    }
-    
-    // Check if selected accessories are in stock
-    if (formData.accessories && formData.accessories.length > 0) {
-      for (const accessory of formData.accessories) {
-        if (accessoriesStock[accessory].quantity === 0) {
-          toast.error(`${accessory} is out of stock!`);
+    // Check if required products are in stock
+    for (const product of selectedProducts) {
+      if (product.category === 'Pump') {
+        const pump = availablePumps.find(p => p.name === product.name);
+        
+        if (!pump || pump.quantity === 0) {
+          toast.error(`${product.name} is out of stock!`);
           return;
+        }
+      } else if (product.category === 'Accessory') {
+        for (const accessory of ACCESSORIES) {
+          if (product.name.includes(accessory) && accessoriesStock[accessory].quantity === 0) {
+            toast.error(`${accessory} is out of stock!`);
+            return;
+          }
         }
       }
     }
     
-    addCustomer(formData);
+    // Prepare to save customer data with product details
+    const customerData = {
+      ...formData,
+      products: selectedProducts.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        quantity: p.quantity,
+        category: p.category
+      }))
+    };
+    
+    addCustomer(customerData);
     toast.success("Order placed successfully! Your bill has been generated.");
     navigate(`/customers`);
   };
@@ -302,6 +354,19 @@ const CustomerForm: React.FC = () => {
           <ProductGallery onSelectProduct={handleProductSelect} />
         </CardContent>
       </Card>
+
+      {/* Selected Products Table */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          Selected Products
+        </h2>
+        <SelectedProductsTable 
+          products={selectedProducts} 
+          onRemoveProduct={removeProductFromSelection}
+          className="animate-fade-in"
+        />
+      </div>
 
       <Card className="shadow-sm">
         <CardHeader>
@@ -424,74 +489,6 @@ const CustomerForm: React.FC = () => {
                         ₹500/ft
                       </Badge>
                     </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="pumpType">Pump Type</Label>
-                  <Select 
-                    value={formData.pumpType || ''}
-                    onValueChange={(value) => handleSelectChange('pumpType', value)}
-                  >
-                    <SelectTrigger id="pumpType">
-                      <SelectValue placeholder="Select pump type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Submersible">
-                        Submersible
-                        <Badge className="ml-2" variant="outline">
-                          {getItemsByCategory('Pump').filter(p => p.name.includes('Submersible')).length} models
-                        </Badge>
-                      </SelectItem>
-                      <SelectItem value="Jet">
-                        Jet
-                        <Badge className="ml-2" variant="outline">
-                          {getItemsByCategory('Pump').filter(p => p.name.includes('Jet')).length} models
-                        </Badge>
-                      </SelectItem>
-                      <SelectItem value="Centrifugal">
-                        Centrifugal
-                        <Badge className="ml-2" variant="outline">
-                          {getItemsByCategory('Pump').filter(p => p.name.includes('Centrifugal')).length} models
-                        </Badge>
-                      </SelectItem>
-                      <SelectItem value="Solar">
-                        Solar
-                        <Badge className="ml-2" variant="outline">
-                          {getItemsByCategory('Pump').filter(p => p.name.includes('Solar')).length} models
-                        </Badge>
-                      </SelectItem>
-                      <SelectItem value="None">None</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.pumpType && formData.pumpType !== 'None' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="pumpModel">Pump Model</Label>
-                    <Select
-                      value={formData.pumpModel || ''}
-                      onValueChange={(value) => handleSelectChange('pumpModel', value)}
-                    >
-                      <SelectTrigger id="pumpModel">
-                        <SelectValue placeholder="Select pump model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availablePumps
-                          .filter(pump => pump.name.includes(formData.pumpType || ''))
-                          .map(pump => (
-                            <SelectItem key={pump.id} value={pump.name.replace(formData.pumpType || '', '').trim()}>
-                              {pump.name.replace(formData.pumpType || '', '').trim()} - ₹{pump.price.toLocaleString('en-IN')}
-                              <Badge 
-                                className="ml-2" 
-                                variant={pump.quantity > 0 ? "outline" : "destructive"}
-                              >
-                                {pump.quantity > 0 ? `${pump.quantity} in stock` : 'Out of stock'}
-                              </Badge>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 )}
 
@@ -626,16 +623,6 @@ const CustomerForm: React.FC = () => {
                     placeholder="Enter additional notes" 
                   />
                 </div>
-
-                {formData.grandTotal > 0 && (
-                  <div className="md:col-span-3 flex justify-center">
-                    <div className="text-center animate-fade-in">
-                      <p className="text-sm font-medium mb-2">Bill Verification QR Code</p>
-                      <img src={formData.qrCodeUrl} alt="Bill QR Code" className="mx-auto hover:scale-105 transition-transform" />
-                      <p className="text-xs text-gray-500 mt-1">Scan to verify bill details</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
