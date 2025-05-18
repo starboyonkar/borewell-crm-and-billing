@@ -213,11 +213,7 @@ const Login: React.FC = () => {
           </CardContent>
           
           <CardFooter className="text-center text-sm text-gray-500">
-            <div className="w-full">
-              Demo credentials:<br />
-              Admin: admin / admin123<br />
-              User: user / user123
-            </div>
+            
           </CardFooter>
         </Card>
       </div>
