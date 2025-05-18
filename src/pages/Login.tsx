@@ -87,7 +87,7 @@ const Login: React.FC = () => {
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="admin" className="text-base bg-cyan-700 hover:bg-cyan-600">Admin Login</TabsTrigger>
+                <TabsTrigger value="admin" className="text-base bg-slate-500 hover:bg-slate-400">Admin Login</TabsTrigger>
                 <TabsTrigger value="customer" className="text-cyan-800 text-base bg-sky-700 hover:bg-sky-600">Customer</TabsTrigger>
               </TabsList>
               
