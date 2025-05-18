@@ -54,7 +54,7 @@ const Header: React.FC = () => {
           </Sheet>
           
           <Link to="/dashboard" className="flex items-center">
-            <img src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" alt="Borewell Services Logo" className="h-10 w-auto mr-2" />
+            <img src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" alt="Borewell Services Logo" className="h-10 w-auto mr-2 object-cover" />
             <span className="text-xl font-bold">Borewell Services</span>
           </Link>
         </div>
@@ -66,11 +66,9 @@ const Header: React.FC = () => {
           <Link to="/customers" className="hover:text-blue-200 transition">
             Customers
           </Link>
-          <Link to="/add-customer" className="hover:text-blue-200 transition px-0"> Shop Now
+          <Link to="/add-customer" className="hover:text-blue-200 transition px-0"> Shop
         </Link>
-          <Link to="/inventory" className="hover:text-blue-200 transition">
-            Inventory
-          </Link>
+          <Link to="/inventory" className="hover:text-blue-200 transition">Inventory  </Link>
           {user?.role === 'admin' && <Link to="/settings" className="hover:text-blue-200 transition">
               Settings
             </Link>}
