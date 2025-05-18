@@ -60,9 +60,7 @@ const Header: React.FC = () => {
         </div>
 
         <nav className="hidden md:flex space-x-6">
-          <Link to="/dashboard" className="hover:text-blue-200 transition">
-            Dashboard
-          </Link>
+          <Link to="/dashboard" className="hover:text-blue-200 transition">Home</Link>
           <Link to="/customers" className="hover:text-blue-200 transition">
             Customers
           </Link>
