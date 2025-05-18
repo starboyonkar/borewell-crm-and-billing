@@ -78,7 +78,7 @@ const Header: React.FC = () => {
           <span className="hidden md:inline">
             {user?.username} ({user?.role})
           </span>
-          <Button variant="outline" onClick={handleLogout} className="text-white border-white font-bold bg-sky-600 hover:bg-sky-500">Logout 💻</Button>
+          <Button variant="outline" onClick={handleLogout} className="text-white border-white font-bold bg-sky-600 hover:bg-sky-500">Log out 📴</Button>
         </div>
       </div>
     </header>;
