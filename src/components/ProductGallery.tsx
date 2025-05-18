@@ -9,6 +9,7 @@ import {
   CarouselPrevious,
   CarouselNext
 } from '@/components/ui/carousel';
+import { toast } from 'sonner';
 import ProductDetail from './ProductDetail';
 
 type Product = {
@@ -80,6 +81,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -108,7 +110,14 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
   
   const handleProductSelect = () => {
     if (selectedProduct && onSelectProduct) {
-      onSelectProduct(selectedProduct);
+      // Add product to selected products if not already selected
+      if (!selectedProductIds.has(selectedProduct.id)) {
+        onSelectProduct(selectedProduct);
+        setSelectedProductIds(prev => new Set([...prev, selectedProduct.id]));
+        toast.success(`Added ${selectedProduct.name} to your bill`);
+      } else {
+        toast.info(`${selectedProduct.name} is already in your bill`);
+      }
       setIsDetailOpen(false);
       setAutoplay(true); // Resume autoplay
     }
@@ -116,12 +125,22 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
 
   const handlePriceClick = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation(); // Prevent triggering the card click
+    
     if (onSelectProduct) {
-      onSelectProduct(product);
-      // Show a brief visual feedback
-      const target = e.currentTarget as HTMLElement;
-      target.classList.add('animate-pulse');
-      setTimeout(() => target.classList.remove('animate-pulse'), 500);
+      // Add product to selected products if not already selected
+      if (!selectedProductIds.has(product.id)) {
+        onSelectProduct(product);
+        setSelectedProductIds(prev => new Set([...prev, product.id]));
+        
+        // Show a brief visual feedback
+        const target = e.currentTarget as HTMLElement;
+        target.classList.add('animate-pulse');
+        setTimeout(() => target.classList.remove('animate-pulse'), 500);
+        
+        toast.success(`Added ${product.name} to your bill`);
+      } else {
+        toast.info(`${product.name} is already in your bill`);
+      }
     }
   };
   
@@ -154,7 +173,11 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
                     <p className="text-sm text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center">
                       <span 
-                        className="font-bold text-borewell-600 cursor-pointer hover:text-borewell-800 transition-colors px-2 py-1 hover:bg-gray-100 rounded"
+                        className={`font-bold cursor-pointer px-2 py-1 rounded transition-colors ${
+                          selectedProductIds.has(product.id) 
+                            ? "bg-green-100 text-green-700" 
+                            : "text-borewell-600 hover:text-borewell-800 hover:bg-gray-100"
+                        }`}
                         onClick={(e) => handlePriceClick(e, product)}
                       >
                         ₹{product.price.toLocaleString('en-IN')}
@@ -182,9 +205,14 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
         <div className="flex justify-center mt-4">
           <Button 
             onClick={handleProductSelect}
-            className="bg-borewell-600 hover:bg-borewell-700 text-white"
+            className={`text-white ${
+              selectedProductIds.has(selectedProduct.id)
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-borewell-600 hover:bg-borewell-700"
+            }`}
+            disabled={selectedProductIds.has(selectedProduct.id)}
           >
-            Add to Bill
+            {selectedProductIds.has(selectedProduct.id) ? 'Already Added' : 'Add to Bill'}
           </Button>
         </div>
       )}
