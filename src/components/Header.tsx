@@ -16,7 +16,7 @@ const Header: React.FC = () => {
     navigate('/login');
   };
   return <header className="bg-borewell-700 text-white shadow-md">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div className="container py-4 flex justify-between items-center mx-0 px-px">
         <div className="flex items-center space-x-2">
           <Sheet>
             <SheetTrigger asChild className="block md:hidden">
@@ -60,13 +60,9 @@ const Header: React.FC = () => {
         </div>
 
         <nav className="hidden md:flex space-x-6">
-          <Link to="/dashboard" className="hover:text-blue-200 transition">
-            Dashboard
-          </Link>
-          <Link to="/customers" className="hover:text-blue-200 transition">
-            Customers
-          </Link>
-          <Link to="/add-customer" className="hover:text-blue-200 transition px-0"> Shop Now</Link>
+          <Link to="/dashboard" className="hover:text-blue-200 transition">Dashboard</Link>
+          <Link to="/customers" className="hover:text-blue-200 transition">Customers</Link>
+          <Link to="/add-customer" className="hover:text-blue-200 transition px-0">Shop Now</Link>
           <Link to="/inventory" className="hover:text-blue-200 transition">  </Link>
           {user?.role === 'admin' && <Link to="/settings" className="hover:text-blue-200 transition">
               Settings
