@@ -5,7 +5,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 
 const Layout: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated && location.pathname !== '/login') {
@@ -15,6 +15,14 @@ const Layout: React.FC = () => {
   // If trying to access login while authenticated, redirect to dashboard
   if (isAuthenticated && location.pathname === '/login') {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // Redirect customer role users trying to access admin-only pages
+  if (isAuthenticated && user?.role === 'customer') {
+    const adminOnlyPaths = ['/inventory', '/settings'];
+    if (adminOnlyPaths.some(path => location.pathname.startsWith(path))) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return (

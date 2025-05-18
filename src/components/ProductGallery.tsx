@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -79,20 +79,49 @@ interface ProductGalleryProps {
 const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
+  
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (autoplay) {
+      interval = setInterval(() => {
+        // Auto-scroll functionality (handled by Carousel component)
+      }, 3000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoplay]);
   
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
     setIsDetailOpen(true);
+    setAutoplay(false); // Pause autoplay when viewing details
   };
   
   const handleDialogClose = () => {
     setIsDetailOpen(false);
+    setAutoplay(true); // Resume autoplay
   };
   
   const handleProductSelect = () => {
     if (selectedProduct && onSelectProduct) {
       onSelectProduct(selectedProduct);
       setIsDetailOpen(false);
+      setAutoplay(true); // Resume autoplay
+    }
+  };
+
+  const handlePriceClick = (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    if (onSelectProduct) {
+      onSelectProduct(product);
+      // Show a brief visual feedback
+      const target = e.currentTarget as HTMLElement;
+      target.classList.add('animate-pulse');
+      setTimeout(() => target.classList.remove('animate-pulse'), 500);
     }
   };
   
@@ -124,7 +153,12 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
                     <h3 className="font-medium text-lg">{product.name}</h3>
                     <p className="text-sm text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-borewell-600">₹{product.price.toLocaleString('en-IN')}</span>
+                      <span 
+                        className="font-bold text-borewell-600 cursor-pointer hover:text-borewell-800 transition-colors px-2 py-1 hover:bg-gray-100 rounded"
+                        onClick={(e) => handlePriceClick(e, product)}
+                      >
+                        ₹{product.price.toLocaleString('en-IN')}
+                      </span>
                       <span className="text-xs bg-gray-100 px-2 py-1 rounded">{product.category}</span>
                     </div>
                   </CardContent>
@@ -141,6 +175,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
         product={selectedProduct} 
         isOpen={isDetailOpen} 
         onClose={handleDialogClose} 
+        onAddToService={onSelectProduct ? handleProductSelect : undefined}
       />
       
       {isDetailOpen && onSelectProduct && selectedProduct && (
@@ -149,7 +184,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
             onClick={handleProductSelect}
             className="bg-borewell-600 hover:bg-borewell-700 text-white"
           >
-            Add {selectedProduct.name} to Service
+            Add to Bill
           </Button>
         </div>
       )}

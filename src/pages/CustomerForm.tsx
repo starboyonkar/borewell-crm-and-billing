@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductGallery, { useProducts } from '@/components/ProductGallery';
 import { convertToWords } from '@/utils/numberToWords';
 import { generateQRCodeURL, generateBillId } from '@/utils/qrCodeGenerator';
+import { ShoppingCart, Save, ShoppingBag } from 'lucide-react';
 
 const ACCESSORIES = ['Pipe', 'Cable', 'Control Panel', 'Starter', 'Filter', 'Motor Guard', 'Clamps'];
 
@@ -56,6 +57,7 @@ const CustomerForm: React.FC = () => {
   const { products } = useProducts();
 
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [formIsValid, setFormIsValid] = useState(false);
 
   // Fix the issue with generateQRCodeURL by using string values for both parameters
   const billId = generateBillId();
@@ -86,6 +88,16 @@ const CustomerForm: React.FC = () => {
   const [availablePumpModels, setAvailablePumpModels] = useState<string[]>([]);
   const [accessoriesStock, setAccessoriesStock] = useState<Record<string, {quantity: number, price: number}>>({});
   const [selectedAccessories, setSelectedAccessories] = useState<Record<string, boolean>>({});
+  
+  // Check form validity
+  useEffect(() => {
+    const requiredFields = ['name', 'phone', 'address'];
+    const isValid = requiredFields.every(field => 
+      formData[field as keyof FormData] && 
+      formData[field as keyof FormData].toString().trim() !== ''
+    );
+    setFormIsValid(isValid && formData.grandTotal > 0);
+  }, [formData]);
 
   // Load inventory data when form loads or serviceType/pumpType changes
   useEffect(() => {
@@ -119,7 +131,7 @@ const CustomerForm: React.FC = () => {
   // Recalculate totals whenever relevant fields change
   useEffect(() => {
     calculateTotals();
-  }, [formData.pumpType, formData.pumpModel, formData.accessories]);
+  }, [formData.pumpType, formData.pumpModel, formData.accessories, formData.borewellDepth]);
 
   const calculateTotals = () => {
     let baseAmount = 0;
@@ -168,11 +180,6 @@ const CustomerForm: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Special case for borewell depth - recalculate totals
-    if (name === 'borewellDepth') {
-      setTimeout(calculateTotals, 0);
-    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -202,9 +209,18 @@ const CustomerForm: React.FC = () => {
       ...prev,
       [value]: checked
     }));
+
+    // Show toast notification
+    if (checked) {
+      toast.success(`Added ${value} to your bill`);
+    } else {
+      toast.info(`Removed ${value} from your bill`);
+    }
   };
 
   const handleProductSelect = (product: any) => {
+    setSelectedProduct(product);
+    
     // Handle selection based on product category
     if (product.category === 'Pump') {
       const pumpType = product.name.split(' ')[0]; // e.g. "Submersible"
@@ -218,6 +234,8 @@ const CustomerForm: React.FC = () => {
       if (models.length > 0) {
         handleSelectChange('pumpModel', models[0]);
       }
+      
+      toast.success(`Added ${product.name} to your bill`);
     } else if (product.category === 'Accessory') {
       // Find matching accessory
       for (const acc of ACCESSORIES) {
@@ -227,12 +245,15 @@ const CustomerForm: React.FC = () => {
         }
       }
     }
-    
-    calculateTotals();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formIsValid) {
+      toast.error("Please fill all required fields and select at least one product/service");
+      return;
+    }
     
     // Check if required pump is in stock
     if (formData.pumpType && formData.pumpModel) {
@@ -256,14 +277,31 @@ const CustomerForm: React.FC = () => {
     }
     
     addCustomer(formData);
+    toast.success("Order placed successfully! Your bill has been generated.");
     navigate(`/customers`);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-bold text-borewell-800">Add New Customer</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-borewell-800">
+          <ShoppingBag className="inline-block mr-2 h-8 w-8" />
+          Buy/Shop
+        </h1>
       </div>
+
+      {/* Product Gallery - Displayed at the top for prominence */}
+      <Card className="shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-borewell-50 to-gray-50">
+          <CardTitle className="flex items-center">
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Available Products
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-2">
+          <ProductGallery onSelectProduct={handleProductSelect} />
+        </CardContent>
+      </Card>
 
       <Card className="shadow-sm">
         <CardHeader>
@@ -347,13 +385,6 @@ const CustomerForm: React.FC = () => {
               </div>
             </div>
             
-            {/* Product Gallery - Displayed by default */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-medium text-borewell-700 mb-4">Product Gallery</h3>
-              <p className="text-sm text-gray-500 mb-4">Click on any product to add it to your service</p>
-              <ProductGallery onSelectProduct={handleProductSelect} />
-            </div>
-
             <div className="border-t pt-6">
               <h3 className="text-lg font-medium text-borewell-700 mb-4">Service Details</h3>
               
@@ -468,7 +499,7 @@ const CustomerForm: React.FC = () => {
                   <Label>Accessories</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {ACCESSORIES.map((accessory) => (
-                      <div key={accessory} className="flex items-center space-x-2">
+                      <div key={accessory} className="flex items-center space-x-2 bg-white p-2 rounded-md border hover:bg-gray-50 transition-colors">
                         <Checkbox 
                           id={`accessory-${accessory}`}
                           checked={(formData.accessories || []).includes(accessory)}
@@ -483,10 +514,13 @@ const CustomerForm: React.FC = () => {
                             accessoriesStock[accessory]?.quantity === 0 ? 'text-gray-400' : ''
                           }`}
                         >
-                          {accessory} - ₹{accessoriesStock[accessory]?.price.toLocaleString('en-IN')}
+                          {accessory}
+                          <span className="text-borewell-600 font-medium block">
+                            ₹{accessoriesStock[accessory]?.price.toLocaleString('en-IN')}
+                          </span>
                           <Badge 
                             variant={accessoriesStock[accessory]?.quantity > 0 ? "outline" : "destructive"} 
-                            className="text-xs"
+                            className="text-xs ml-auto"
                           >
                             {accessoriesStock[accessory]?.quantity > 0 
                               ? `${accessoriesStock[accessory]?.quantity} in stock` 
@@ -512,7 +546,7 @@ const CustomerForm: React.FC = () => {
                     type="number"
                     value={formData.totalAmount || ''}
                     readOnly
-                    className="bg-gray-100"
+                    className="bg-gray-100 font-medium"
                   />
                   <p className="text-xs text-gray-500">Calculated based on selected items</p>
                 </div>
@@ -537,7 +571,7 @@ const CustomerForm: React.FC = () => {
                     type="number"
                     value={formData.grandTotal || ''}
                     readOnly
-                    className="bg-gray-100"
+                    className="bg-gray-100 text-borewell-800 font-bold"
                   />
                 </div>
 
@@ -595,9 +629,9 @@ const CustomerForm: React.FC = () => {
 
                 {formData.grandTotal > 0 && (
                   <div className="md:col-span-3 flex justify-center">
-                    <div className="text-center">
+                    <div className="text-center animate-fade-in">
                       <p className="text-sm font-medium mb-2">Bill Verification QR Code</p>
-                      <img src={formData.qrCodeUrl} alt="Bill QR Code" className="mx-auto" />
+                      <img src={formData.qrCodeUrl} alt="Bill QR Code" className="mx-auto hover:scale-105 transition-transform" />
                       <p className="text-xs text-gray-500 mt-1">Scan to verify bill details</p>
                     </div>
                   </div>
@@ -605,7 +639,7 @@ const CustomerForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end space-x-4 pt-4 border-t">
               <Button 
                 type="button" 
                 variant="outline"
@@ -616,8 +650,10 @@ const CustomerForm: React.FC = () => {
               <Button 
                 type="submit" 
                 className="bg-borewell-600 hover:bg-borewell-700"
+                disabled={!formIsValid}
               >
-                Save Customer
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Place Order
               </Button>
             </div>
           </form>

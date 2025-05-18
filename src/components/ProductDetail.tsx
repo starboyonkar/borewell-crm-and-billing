@@ -7,10 +7,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Info } from "lucide-react";
+import { ZoomIn, ZoomOut, Info, ShoppingCart, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -25,12 +27,14 @@ interface ProductDetailProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
+  onAddToService?: (product: Product) => void;
 }
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ 
   product, 
   isOpen, 
-  onClose 
+  onClose,
+  onAddToService
 }) => {
   const [zoomLevel, setZoomLevel] = React.useState(1);
   const [showInfo, setShowInfo] = React.useState(false);
@@ -45,6 +49,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   
   const toggleInfo = () => {
     setShowInfo(prev => !prev);
+  };
+
+  const handleAddToCart = () => {
+    if (product && onAddToService) {
+      onAddToService(product);
+      toast.success(`Added ${product.name} to your bill`);
+      onClose();
+    }
   };
   
   if (!product) return null;
@@ -113,7 +125,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
         <div className={`rounded-md p-3 bg-secondary/10 transition-all ${showInfo ? 'max-h-96' : 'max-h-24 overflow-hidden'}`}>
           <div className="mb-2 flex justify-between items-center">
             <h3 className="font-semibold">Product Details</h3>
-            <span className="text-lg font-bold text-borewell-600">₹{product.price.toLocaleString('en-IN')}</span>
+            <span 
+              className="text-lg font-bold text-borewell-600 cursor-pointer hover:bg-gray-100 px-3 py-1 rounded transition-all"
+              onClick={onAddToService ? handleAddToCart : undefined}
+            >
+              ₹{product.price.toLocaleString('en-IN')}
+            </span>
           </div>
           
           <p className="text-sm text-gray-600 mb-3">{product.description}</p>
@@ -131,9 +148,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
           )}
         </div>
         
-        <DialogClose asChild>
-          <Button variant="outline" onClick={onClose}>Close</Button>
-        </DialogClose>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+          {onAddToService && (
+            <Button 
+              className="w-full sm:w-auto bg-borewell-600 hover:bg-borewell-700 text-white"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Add to Bill
+            </Button>
+          )}
+          <DialogClose asChild>
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Close</Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

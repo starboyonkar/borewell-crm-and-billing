@@ -44,6 +44,17 @@ const AuthGuard = ({ allowedRoles, redirectPath = "/login" }: { allowedRoles?: s
   return <Outlet />;
 };
 
+// Added a more strict guard specifically for admin-only areas
+const StrictAdminGuard = () => {
+  const { user } = useAuth();
+  
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <Outlet />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -69,8 +80,8 @@ const App = () => (
                       <Route path="/add-customer" element={<CustomerForm />} />
                     </Route>
                     
-                    {/* Admin-only routes */}
-                    <Route element={<AuthGuard allowedRoles={['admin']} />}>
+                    {/* Admin-only routes - more strictly enforced */}
+                    <Route element={<StrictAdminGuard />}>
                       <Route path="/inventory" element={<Inventory />} />
                       <Route path="/settings" element={<Settings />} />
                     </Route>
