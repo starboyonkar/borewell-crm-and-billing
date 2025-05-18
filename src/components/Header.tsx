@@ -1,27 +1,21 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
 import { Menu } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const {
+    user,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
-  return (
-    <header className="bg-borewell-700 text-white shadow-md">
+  return <header className="bg-borewell-700 text-white shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Sheet>
@@ -33,11 +27,7 @@ const Header: React.FC = () => {
             <SheetContent side="left" className="w-64 sm:w-80">
               <div className="flex flex-col h-full py-6 space-y-6">
                 <div className="flex items-center px-4">
-                  <img 
-                    src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" 
-                    alt="Borewell Services Logo" 
-                    className="h-10 w-auto mr-2"
-                  />
+                  <img src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" alt="Borewell Services Logo" className="h-10 w-auto mr-2" />
                   <Link to="/dashboard" className="text-xl font-bold">
                     Borewell Services
                   </Link>
@@ -55,22 +45,16 @@ const Header: React.FC = () => {
                   <Link to="/inventory" className="hover:text-blue-200 transition py-2">
                     Inventory
                   </Link>
-                  {user?.role === 'admin' && (
-                    <Link to="/settings" className="hover:text-blue-200 transition py-2">
+                  {user?.role === 'admin' && <Link to="/settings" className="hover:text-blue-200 transition py-2">
                       Settings
-                    </Link>
-                  )}
+                    </Link>}
                 </nav>
               </div>
             </SheetContent>
           </Sheet>
           
           <Link to="/dashboard" className="flex items-center">
-            <img 
-              src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" 
-              alt="Borewell Services Logo" 
-              className="h-10 w-auto mr-2"
-            />
+            <img src="/lovable-uploads/20de38f6-1556-4a07-91e8-ba28d1486d4f.png" alt="Borewell Services Logo" className="h-10 w-auto mr-2" />
             <span className="text-xl font-bold">Borewell Services</span>
           </Link>
         </div>
@@ -88,11 +72,9 @@ const Header: React.FC = () => {
           <Link to="/inventory" className="hover:text-blue-200 transition">
             Inventory
           </Link>
-          {user?.role === 'admin' && (
-            <Link to="/settings" className="hover:text-blue-200 transition">
+          {user?.role === 'admin' && <Link to="/settings" className="hover:text-blue-200 transition">
               Settings
-            </Link>
-          )}
+            </Link>}
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -100,13 +82,9 @@ const Header: React.FC = () => {
           <span className="hidden md:inline">
             {user?.username} ({user?.role})
           </span>
-          <Button variant="outline" onClick={handleLogout} className="text-white border-white hover:bg-borewell-600">
-            Logout
-          </Button>
+          <Button variant="outline" onClick={handleLogout} className="text-white border-white bg-red-800 hover:bg-red-700 font-bold">Logout 💻</Button>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Header;
