@@ -10,7 +10,7 @@ Welcome to the Borewell CRM and Billing Application — a modern, responsive web
 
 _Replace `<YOUR_EC2_PUBLIC_IP>` with your actual EC2 IP._
 
-![image](https://github.com/user-attachments/assets/d6bb3fba-ff00-4c7f-a51e-fd8fc3e4f953)
+![Borewell_CRM-Billing_page-0001](https://github.com/user-attachments/assets/2dad33c0-93fc-489d-802f-08af5789841d)
 
 ---
 
