@@ -6,7 +6,7 @@ Welcome to the Borewell CRM and Billing Application — a modern, responsive web
 
 ## 🌐 Live Application
 
-**URL:** http://52.66.79.110:3000/
+**URL:** http://13.201.158.202:3000/
 
 _Replace `<YOUR_EC2_PUBLIC_IP>` with your actual EC2 IP._
 
