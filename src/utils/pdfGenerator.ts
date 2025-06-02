@@ -1,11 +1,10 @@
-
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import type { CustomerData } from '../context/CustomerContext';
 
 // Use proper typing for jsPDF with autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDFWithAutoTable;
+  autoTable: typeof autoTable;
   lastAutoTable: {
     finalY: number;
   };
@@ -87,7 +86,7 @@ export const generatePDF = (customer: CustomerData): jsPDF => {
   doc.text(`Payment Status: ${customer.paymentStatus}`, pageWidth - 75, 116);
   
   // Service details table
-  doc.autoTable({
+  autoTable(doc, {
     startY: 135,
     head: [['Service/Product', 'Description', 'Amount']],
     body: [
