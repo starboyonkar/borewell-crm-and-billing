@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -58,6 +57,9 @@ const CustomerForm: React.FC = () => {
 
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [formIsValid, setFormIsValid] = useState(false);
+  
+  // Create a Set of selected product IDs for easy lookup
+  const selectedProductIds = new Set(selectedProducts.map(p => p.id));
   
   // Fix the issue with generateQRCodeURL by using string values for both parameters
   const billId = generateBillId();
@@ -212,23 +214,19 @@ const CustomerForm: React.FC = () => {
 
   const addProductToSelection = (product: any) => {
     // Check if product is already in the selected list
-    const existingProductIndex = selectedProducts.findIndex(p => p.id === product.id);
+    const existingProduct = selectedProducts.find(p => p.id === product.id);
     
-    if (existingProductIndex >= 0) {
-      // Product already exists, update quantity
-      const updatedProducts = [...selectedProducts];
-      updatedProducts[existingProductIndex] = {
-        ...updatedProducts[existingProductIndex],
-        quantity: updatedProducts[existingProductIndex].quantity + 1
-      };
-      setSelectedProducts(updatedProducts);
-    } else {
-      // Add new product
-      setSelectedProducts(prev => [
-        ...prev, 
-        { ...product, quantity: 1 }
-      ]);
+    if (existingProduct) {
+      // Product already exists, don't add duplicate
+      toast.info(`${product.name} is already in your bill`);
+      return;
     }
+    
+    // Add new product with quantity 1
+    setSelectedProducts(prev => [
+      ...prev, 
+      { ...product, quantity: 1 }
+    ]);
     
     // Handle pump selection
     if (product.category === 'Pump') {
@@ -243,13 +241,19 @@ const CustomerForm: React.FC = () => {
       if (models.length > 0) {
         handleSelectChange('pumpModel', models[0]);
       }
-      
-      toast.success(`Added ${product.name} to your bill`);
     } else if (product.category === 'Accessory') {
       // Find matching accessory
       for (const acc of ACCESSORIES) {
         if (product.name.includes(acc)) {
-          handleAccessoryToggle(acc, true);
+          // Update form data accessories without triggering handleAccessoryToggle
+          setFormData(prev => ({
+            ...prev,
+            accessories: [...(prev.accessories || []), acc]
+          }));
+          setSelectedAccessories(prev => ({
+            ...prev,
+            [acc]: true
+          }));
           break;
         }
       }
@@ -351,7 +355,10 @@ const CustomerForm: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 sm:p-2">
-          <ProductGallery onSelectProduct={handleProductSelect} />
+          <ProductGallery 
+            onSelectProduct={handleProductSelect} 
+            selectedProductIds={selectedProductIds}
+          />
         </CardContent>
       </Card>
 
@@ -368,6 +375,7 @@ const CustomerForm: React.FC = () => {
         />
       </div>
 
+      {/* Customer Information Form */}
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Customer Information</CardTitle>

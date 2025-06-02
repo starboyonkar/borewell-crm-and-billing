@@ -75,13 +75,13 @@ const PRODUCTS: Product[] = [
 
 interface ProductGalleryProps {
   onSelectProduct?: (product: Product) => void;
+  selectedProductIds?: Set<string>;
 }
 
-const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
+const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct, selectedProductIds = new Set() }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
-  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -110,10 +110,9 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
   
   const handleProductSelect = () => {
     if (selectedProduct && onSelectProduct) {
-      // Add product to selected products if not already selected
+      // Check if product is already selected
       if (!selectedProductIds.has(selectedProduct.id)) {
         onSelectProduct(selectedProduct);
-        setSelectedProductIds(prev => new Set([...prev, selectedProduct.id]));
         toast.success(`Added ${selectedProduct.name} to your bill`);
       } else {
         toast.info(`${selectedProduct.name} is already in your bill`);
@@ -127,10 +126,9 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
     e.stopPropagation(); // Prevent triggering the card click
     
     if (onSelectProduct) {
-      // Add product to selected products if not already selected
+      // Check if product is already selected to prevent duplicates
       if (!selectedProductIds.has(product.id)) {
         onSelectProduct(product);
-        setSelectedProductIds(prev => new Set([...prev, product.id]));
         
         // Show a brief visual feedback
         const target = e.currentTarget as HTMLElement;
@@ -175,12 +173,13 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
                       <span 
                         className={`font-bold cursor-pointer px-2 py-1 rounded transition-colors ${
                           selectedProductIds.has(product.id) 
-                            ? "bg-green-100 text-green-700" 
+                            ? "bg-green-100 text-green-700 cursor-not-allowed" 
                             : "text-borewell-600 hover:text-borewell-800 hover:bg-gray-100"
                         }`}
                         onClick={(e) => handlePriceClick(e, product)}
+                        title={selectedProductIds.has(product.id) ? "Already added to bill" : "Click to add to bill"}
                       >
-                        ₹{product.price.toLocaleString('en-IN')}
+                        {selectedProductIds.has(product.id) ? "✓ Added" : `₹${product.price.toLocaleString('en-IN')}`}
                       </span>
                       <span className="text-xs bg-gray-100 px-2 py-1 rounded">{product.category}</span>
                     </div>
@@ -212,7 +211,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ onSelectProduct }) => {
             }`}
             disabled={selectedProductIds.has(selectedProduct.id)}
           >
-            {selectedProductIds.has(selectedProduct.id) ? 'Already Added' : 'Add to Bill'}
+            {selectedProductIds.has(selectedProduct.id) ? '✓ Already Added' : 'Add to Bill'}
           </Button>
         </div>
       )}
