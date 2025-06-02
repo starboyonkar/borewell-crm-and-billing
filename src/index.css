@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,26 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Social media icon animations */
+@layer components {
+  .social-icon {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .social-icon:hover {
+    @apply scale-110 shadow-lg;
+    animation: pulse-glow 1.5s infinite;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
   }
 }

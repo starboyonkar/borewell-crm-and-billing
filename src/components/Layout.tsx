@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
+import Footer from './Footer';
 
 const Layout: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -31,11 +32,7 @@ const Layout: React.FC = () => {
       <main className="flex-grow container mx-auto px-4 py-8">
         <Outlet />
       </main>
-      {isAuthenticated && (
-        <footer className="bg-borewell-800 text-white p-4 text-center">
-          <p>© {new Date().getFullYear()} Borewell Services & Equipment. All rights reserved.</p>
-        </footer>
-      )}
+      <Footer />
     </div>
   );
 };
