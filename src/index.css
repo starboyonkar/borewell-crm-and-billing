@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,20 +36,29 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom theme variables */
+    --theme-primary: #0D47A1;
+    --theme-primary-rgb: 13, 71, 161;
+    --theme-secondary: #1976D2;
+    --theme-secondary-rgb: 25, 118, 210;
+    --theme-accent: #42A5F5;
+    --theme-accent-rgb: 66, 165, 245;
+    --theme-background: #F5F7FA;
+    --theme-background-rgb: 245, 247, 250;
+    --theme-text: #212121;
+    --theme-text-rgb: 33, 33, 33;
+    --theme-surface: #FFFFFF;
+    --theme-surface-rgb: 255, 255, 255;
+    --theme-border: #E3F2FD;
+    --theme-muted: #F0F4F8;
   }
 
   .dark {
@@ -97,5 +107,83 @@
 
   body {
     @apply bg-background text-foreground;
+    background-color: var(--theme-background);
+    color: var(--theme-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@layer components {
+  .theme-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .theme-surface {
+    background-color: var(--theme-surface);
+    color: var(--theme-text);
+  }
+
+  .theme-primary {
+    background-color: var(--theme-primary);
+    color: white;
+  }
+
+  .theme-secondary {
+    background-color: var(--theme-secondary);
+    color: white;
+  }
+
+  .theme-accent {
+    background-color: var(--theme-accent);
+    color: var(--theme-text);
+  }
+
+  .theme-border {
+    border-color: var(--theme-border);
+  }
+
+  .theme-text-primary {
+    color: var(--theme-primary);
+  }
+
+  .theme-text-secondary {
+    color: var(--theme-secondary);
+  }
+
+  /* Theme-specific overrides */
+  .theme-midnight-pro {
+    --borewell-50: #1a1a1a;
+    --borewell-100: #262626;
+    --borewell-500: #1E88E5;
+    --borewell-600: #1976D2;
+    --borewell-700: #1565C0;
+    --borewell-800: #0D47A1;
+  }
+
+  .theme-emerald-fresh {
+    --borewell-50: #f1f8e9;
+    --borewell-100: #e8f5e8;
+    --borewell-500: #66BB6A;
+    --borewell-600: #2E7D32;
+    --borewell-700: #1B5E20;
+    --borewell-800: #2E7D32;
+  }
+
+  .theme-sunset-gold {
+    --borewell-50: #fff8f1;
+    --borewell-100: #fff3e0;
+    --borewell-500: #FF9800;
+    --borewell-600: #B26500;
+    --borewell-700: #E65100;
+    --borewell-800: #B26500;
+  }
+
+  .theme-slate-violet {
+    --borewell-50: #f8f5ff;
+    --borewell-100: #f3e5f5;
+    --borewell-500: #AB47BC;
+    --borewell-600: #6A1B9A;
+    --borewell-700: #4A148C;
+    --borewell-800: #6A1B9A;
   }
 }

@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CustomerProvider } from "./context/CustomerContext";
 import { InventoryProvider } from "./context/InventoryContext";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { CustomThemeProvider } from "./context/CustomThemeContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -21,9 +22,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,  // Improve form performance
-      staleTime: 30000,             // Reduce unnecessary refetches
-      retry: 1                      // Limit retries
+      refetchOnWindowFocus: false,
+      staleTime: 30000,
+      retry: 1
     },
   },
 });
@@ -61,39 +62,41 @@ const App = () => (
       <Toaster />
       <Sonner />
       <ThemeProvider defaultTheme="light" storageKey="borewell-theme">
-        <AuthProvider>
-          <CustomerProvider>
-            <InventoryProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route element={<Layout />}>
-                    <Route path="/login" element={<Login />} />
-                    
-                    {/* Public routes */}
-                    <Route index element={<Navigate to="/dashboard" />} />
-                    
-                    {/* Protected routes for all authenticated users */}
-                    <Route element={<AuthGuard />}>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/customers/:id" element={<CustomerDetail />} />
-                      <Route path="/add-customer" element={<CustomerForm />} />
+        <CustomThemeProvider>
+          <AuthProvider>
+            <CustomerProvider>
+              <InventoryProvider>
+                <BrowserRouter>
+                  <Routes>
+                    <Route element={<Layout />}>
+                      <Route path="/login" element={<Login />} />
+                      
+                      {/* Public routes */}
+                      <Route index element={<Navigate to="/dashboard" />} />
+                      
+                      {/* Protected routes for all authenticated users */}
+                      <Route element={<AuthGuard />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/customers" element={<Customers />} />
+                        <Route path="/customers/:id" element={<CustomerDetail />} />
+                        <Route path="/add-customer" element={<CustomerForm />} />
+                      </Route>
+                      
+                      {/* Admin-only routes - more strictly enforced */}
+                      <Route element={<StrictAdminGuard />}>
+                        <Route path="/inventory" element={<Inventory />} />
+                        <Route path="/settings" element={<Settings />} />
+                      </Route>
+                      
+                      {/* Catch-all route */}
+                      <Route path="*" element={<NotFound />} />
                     </Route>
-                    
-                    {/* Admin-only routes - more strictly enforced */}
-                    <Route element={<StrictAdminGuard />}>
-                      <Route path="/inventory" element={<Inventory />} />
-                      <Route path="/settings" element={<Settings />} />
-                    </Route>
-                    
-                    {/* Catch-all route */}
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </InventoryProvider>
-          </CustomerProvider>
-        </AuthProvider>
+                  </Routes>
+                </BrowserRouter>
+              </InventoryProvider>
+            </CustomerProvider>
+          </AuthProvider>
+        </CustomThemeProvider>
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
