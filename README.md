@@ -6,9 +6,8 @@ Welcome to the Borewell CRM and Billing Application — a modern, responsive web
 
 ## 🌐 Live Application
 
-**URL:** https://borewell-crm-billing.netlify.app/
+**URL:** [https://borewell-crm-billing.netlify.app/](https://borewell-crm-billing.netlify.app/)
 
-_Replace `<YOUR_EC2_PUBLIC_IP>` with your actual EC2 IP._
 
 ---
 
