@@ -6,7 +6,7 @@ Welcome to the Borewell CRM and Billing Application — a modern, responsive web
 
 ## 🌐 Live Application
 
-**URL:** [https://borewell-crm-billing.netlify.app/](https://ecomerce-crm-app.netlify.app/login)
+**URL:** [https://ecomerce-crm-app.netlify.app/login](https://ecomerce-crm-app.netlify.app/login)
 
 
 ---
